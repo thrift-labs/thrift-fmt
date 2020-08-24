@@ -16,6 +16,17 @@ thrift formatter
 3. 支持 include?
 4. 封装成 python package
 
+```bash
+python simple.py tutorial/tutorial.thrift
+```
+
+### ptsd 不足
+
+1. comment 丢失
+2. default 值丢失
+3. optional required 丢失
+4. extends 后面的是一个 <object>
+5. 非逗号 + 2 space tab 风格
 
 ## LICENSE
 
