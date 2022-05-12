@@ -1,0 +1,18 @@
+[project]
+name = "thrift-fmt"
+version = "0.1.0"
+description = "formart thrift file"
+authors = [
+    {name = "alingse", email = "alingse@foxmail.com"},
+]
+dependencies = []
+requires-python = ">=3.7"
+readme = "README.md"
+license = {text = "MIT"}
+
+[tool]
+[tool.pdm]
+
+[build-system]
+requires = ["pdm-pep517>=0.12.0"]
+build-backend = "pdm.pep517.api"
