@@ -1,6 +1,12 @@
 import click
 
+from .core import ThriftData
+
 
 @click.command()
-def main():
-    click.echo('thrift-fmt format thrift files in one style')
+@click.argument('fin', type=click.Path(exists=True, file_okay=True))
+@click.argument('fout', type=click.Path(file_okay=True, writable=True))
+def main(fout, fin):
+    data = ThriftData.from_file(fin)
+    fmt_data = data.format()
+    fmt_data.dump(fout)
