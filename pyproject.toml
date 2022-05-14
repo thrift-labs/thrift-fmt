@@ -12,7 +12,12 @@ dependencies = [
 requires-python = ">=3.7"
 readme = "README.md"
 license = {text = "MIT"}
-[project.optional-dependencies]
+
+[project.urls]
+homepage = "https://github.com/alingse/thrift-fmt"
+
+[project.scripts]
+thrift-fmt = "thrift_fmt.main:main"
 
 [tool]
 [tool.pdm]
