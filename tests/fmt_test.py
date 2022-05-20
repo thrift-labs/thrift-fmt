@@ -6,12 +6,24 @@ from thrift_fmt.core import ThriftData, ThriftFormatter
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
-
-def test_load_data():
-    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/simple.thrift'))
+def run_fmt(file):
+    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data.document)
     out = io.StringIO()
     fmt.format(out)
-    print(out.getvalue())
-    assert len(out.getvalue()) == 70
+    return out.getvalue()
+
+
+def test_simple():
+    out = run_fmt('simple.thrift')
+    print(out)
+    assert len(out) == 69
+    assert out.count('\n') == 3
+
+
+def test_complex():
+    out = run_fmt('tutorial.thrift')
+    print(out)
+    assert len(out) == 68
+
