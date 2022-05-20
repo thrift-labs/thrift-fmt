@@ -15,7 +15,10 @@ thrift formatter
 2. 定义格式 空格/换行/注释
 3. 支持 include?
 4. 封装成 python package
-
+5. struct 依赖排序(生成 python 代码会有依赖问题)
+6. 补充 optional/required
+7. 校正类型
+8. 兼容注释
 ```bash
 python simple.py tutorial/tutorial.thrift
 ```
