@@ -53,12 +53,6 @@ class ThriftFormatter(object):
         self._out.write('\n'*diff)
         self._newline_c += diff
 
-    def push_tokens(self, children, join=' '):
-        for i, child in enumerate(children):
-            if i > 0:
-                self.push(join)
-            self.push_token(child)
-
     def push_token(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
         if node.symbol.type == ThriftParser.EOF:
@@ -72,46 +66,43 @@ class ThriftFormatter(object):
                 child.parent = node
 
         method_name = node.__class__.__name__.split('.')[-1]
-        if hasattr(self, method_name):
-            getattr(self, method_name)(node)
-        else:
-            print(type(node))
-            #import pdb
-            #pdb.set_trace()
+        fn = getattr(self, method_name, self._inline_Context)
+        fn(node)
 
-    def iter_children(self, node, join='\n'):
-        for i, child in enumerate(node.children):
-            if i > 0:
-                if join == '\n':
-                    self._newline()
-                else:
-                    self.push(join)
-            self.process_node(child)
-
-    def iter_nodes(self, nodes, indent='', join='\n'):
+    def get_repeat_children(self, nodes, cls):
+        children = []
         for i, child in enumerate(nodes):
+            if not isinstance(child, cls):
+                return children, nodes[i:]
+            children.append(child)
+        return children, []
+
+    def is_EOF(self, node):
+        return isinstance(node, TerminalNodeImpl) and node.symbol.type == ThriftParser.EOF
+
+    def _block_nodes(self, nodes, indent=''):
+        last_node = None
+        for i, node in enumerate(nodes):
+            if self.is_EOF(node):
+                break
+
+            if isinstance(node, (ThriftParser.HeaderContext, ThriftParser.DefinitionContext)):
+                node = node.children[0]
             if i > 0:
-                if join == '\n':
-                    self._newline()
+                # TODO: skip struct/enum/senum/service
+                if node.__class__ != last_node.__class__:
+                    self._newline(2)
                 else:
-                    self.push(join)
+                    self._newline()
 
             self.push(indent)
-            self.process_node(child)
+            self.process_node(node)
+            last_node = node
 
-    def iter_nodes_v2(self, nodes, indent=None, join=" ", split=False):
-        last = None
+    def _inline_nodes(self, nodes):
         for i, node in enumerate(nodes):
             if i > 0:
-                if join == "\n":
-                    self._newline()
-                else:
-                    self.push(join)
-                if split and nodes[i-1].__class__ != node.__class__:
-                    self._newline(2)
-
-            if indent:
-                self.push(indent)
+                self.push(' ')
             self.process_node(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
@@ -120,93 +111,63 @@ class ThriftFormatter(object):
     def DocumentContext(self, node):
         self.push('# fmt by thrift-fmt')
         self._newline()
-        self.iter_nodes_v2(node.children, join='\n', split=True)
+        self._block_nodes(node.children)
         self._newline()
 
     def HeaderContext(self, node):
-        self.iter_nodes_v2(node.children, join='\n', split=True)
-        self._newline(2)
-
-    def Include_Context(self, node):
-        self.iter_nodes_v2(node.children, join=' ')
-
-    def Namespace_Context(self, node):
-        self.push_tokens(node.children[:3])
-        if len(node.children) > 3:
-            self.process_node(node.children[3])
+        assert False
 
     def DefinitionContext(self, node):
-        self.iter_nodes_v2(node.children, join='\n', split=True)
+        assert False
 
-    def Typedef_Context(self, node):
-        self.push('typedef ')
-        self.process_node(node.children[1])
-        self.push(' ')
-        self.push(node.children[2].symbol.text)
+    def _inline_Context(self, node):
+        self._inline_nodes(node.children)
 
-        if len(node.children) > 3:
-            self.process_node(node.children[3])
-        self._newline()
+    def _inline_Context_type_annotation(self, node):
+        if len(node.children) == 0:
+            return
+        if not isinstance(node.children[-1], ThriftParser.Type_annotationContext):
+            self._inline_Context(node)
+        else:
+            self._inline_nodes(node.children[:-1])
+            self.process_node(node.children[-1])
 
-    def Field_typeContext(self, node):
-        self.process_node(node.children[0])
-
-    def Base_typeContext(self, node):
-        self.process_node(node.children[0])
-        if len(node.children) > 1:
-            self.process_node(node.children[1])
-
-    def Real_base_typeContext(self, node):
-        self.push_token(node.children[0])
-
-    def iter_children_line(self, node):
-        self.iter_children(node, join=' ')
-
-    def Const_ruleContext(self, node):
-        self.iter_children_line(node)
-        self._newline()
-
-    Const_valueContext = iter_children_line
-    IntegerContext = iter_children_line
-    Container_typeContext = iter_children_line
-    Map_typeContext = iter_children_line
-    Const_mapContext = iter_children_line
-    Const_map_entryContext = iter_children_line
-
-    def List_separatorContext(self, node):
-        self.push_token(node.children[0])
+    Include_Context = _inline_Context
+    Namespace_Context = _inline_Context_type_annotation
+    Typedef_Context = _inline_Context_type_annotation
+    Base_typeContext = _inline_Context_type_annotation
+    Field_typeContext = _inline_Context
+    Real_base_typeContext = _inline_Context
+    Const_ruleContext = _inline_Context
+    Const_valueContext = _inline_Context
+    IntegerContext = _inline_Context
+    Container_typeContext = _inline_Context
+    Map_typeContext = _inline_Context
+    Const_mapContext = _inline_Context
+    Const_map_entryContext = _inline_Context
+    List_separatorContext = _inline_Context
+    Enum_fieldContext = _inline_Context
 
     def Enum_ruleContext(self, node):
-        self.iter_nodes(node.children[:3], join=' ')
+        self._inline_nodes(node.children[:3])
         self._newline()
-        fields = []
-        i = 0
-        for i, child in enumerate(node.children[3:]):
-            if not isinstance(child, ThriftParser.Enum_fieldContext):
-                break
-            fields.append(child)
-        self.iter_nodes(fields, indent=' '*4, join='\n')
+        fields, left = self.get_repeat_children(node.children[3:], ThriftParser.Enum_fieldContext)
+        self._block_nodes(fields, indent=' '*4)
         self._newline()
-        self.iter_nodes(node.children[i+3:], join=' ')
-
-    def Enum_fieldContext(self, node):
-        self.iter_children_line(node)
+        # TODO: type_annotation
+        self._inline_nodes(left)
 
     def Struct_Context(self, node):
-        self.iter_nodes(node.children[:3], join=' ')
+        self._inline_nodes(node.children[:3])
         self._newline()
-        fields = []
-        i = 0
-        for i, child in enumerate(node.children[3:]):
-            if not isinstance(child, ThriftParser.FieldContext):
-                break
-            fields.append(child)
-        self.iter_nodes(fields, indent=' '*4, join='\n')
+        #import pdb
+        #pdb.set_trace()
+        fields, left = self.get_repeat_children(node.children[3:], ThriftParser.FieldContext)
+        self._block_nodes(fields, indent=' '*4)
         self._newline()
-        self.iter_nodes(node.children[i+3:], join=' ')
+        self._inline_nodes(left)
 
 '''
-Cpp_includeContext
 SenumContext
 Union_Context
 ExceptionContext
@@ -228,8 +189,6 @@ Map_typeContext
 Set_typeContext
 List_typeContext
 Cpp_typeContext
-
-
 Const_listContext
 Const_map_entryContext
 Const_mapContext

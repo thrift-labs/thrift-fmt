@@ -25,5 +25,9 @@ def test_simple():
 def test_complex():
     out = run_fmt('tutorial.thrift')
     print(out)
-    assert len(out) == 68
+    assert len(out) == 816
 
+def test_thrift_test():
+    out = run_fmt('ThriftTest.thrift')
+    print(out)
+    assert len(out) == 816
