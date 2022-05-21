@@ -34,11 +34,9 @@ class ThriftFormatter(object):
         self._document = document
         self._out = sys.stdout
         self._newline_c = 0
-        self._last_nodes = []
 
     def format(self, out: typing.TextIO):
         self._out = out
-        self._last_nodes = []
         self._newline_c = 0
         self.process_node(self._document)
 
@@ -68,10 +66,14 @@ class ThriftFormatter(object):
         self.push(node.symbol.text)
 
     def process_node(self, node):
+        if not isinstance(node, TerminalNodeImpl):
+            # add parent
+            for child in node.children:
+                child.parent = node
+
         method_name = node.__class__.__name__.split('.')[-1]
         if hasattr(self, method_name):
             getattr(self, method_name)(node)
-            self._last_nodes.push(node)
         else:
             print(type(node))
             #import pdb
@@ -84,6 +86,17 @@ class ThriftFormatter(object):
                     self._newline()
                 else:
                     self.push(join)
+            self.process_node(child)
+
+    def iter_nodes(self, nodes, indent='', join='\n'):
+        for i, child in enumerate(nodes):
+            if i > 0:
+                if join == '\n':
+                    self._newline()
+                else:
+                    self.push(join)
+
+            self.push(indent)
             self.process_node(child)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
@@ -110,7 +123,9 @@ class ThriftFormatter(object):
         self._newline()
 
     def DefinitionContext(self, node):
+        # TODO: assert same
         self.iter_children(node)
+        self._newline(1)
 
     def Typedef_Context(self, node):
         self.push('typedef ')
@@ -151,15 +166,37 @@ class ThriftFormatter(object):
         self.push_token(node.children[0])
 
     def Enum_ruleContext(self, node):
-        pass
+        self.iter_nodes(node.children[:3], join=' ')
+        self._newline()
+        fields = []
+        i = 0
+        for i, child in enumerate(node.children[3:]):
+            if not isinstance(child, ThriftParser.Enum_fieldContext):
+                break
+            fields.append(child)
+        self.iter_nodes(fields, indent=' '*4, join='\n')
+        self._newline()
+        self.iter_nodes(node.children[i+3:], join=' ')
+
+    def Enum_fieldContext(self, node):
+        self.iter_children_line(node)
+
+    def Struct_Context(self, node):
+        self.iter_nodes(node.children[:3], join=' ')
+        self._newline()
+        fields = []
+        i = 0
+        for i, child in enumerate(node.children[3:]):
+            if not isinstance(child, ThriftParser.FieldContext):
+                break
+            fields.append(child)
+        self.iter_nodes(fields, indent=' '*4, join='\n')
+        self._newline()
+        self.iter_nodes(node.children[i+3:], join=' ')
 
 '''
 Cpp_includeContext
-
-
-Enum_fieldContext
 SenumContext
-Struct_Context
 Union_Context
 ExceptionContext
 ServiceContext
