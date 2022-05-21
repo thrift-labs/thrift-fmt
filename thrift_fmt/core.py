@@ -66,7 +66,8 @@ class ThriftFormatter(object):
                 child.parent = node
 
         method_name = node.__class__.__name__.split('.')[-1]
-        fn = getattr(self, method_name, self._inline_Context)
+        fn = getattr(self, method_name, None)
+        assert fn
         fn(node)
 
     def get_repeat_children(self, nodes, cls):
@@ -143,55 +144,44 @@ class ThriftFormatter(object):
     IntegerContext = _inline_Context
     Container_typeContext = _inline_Context
     Map_typeContext = _inline_Context
+    Set_typeContext = _inline_Context
+    List_typeContext = _inline_Context
+    Cpp_typeContext = _inline_Context
+    Const_listContext = _inline_Context
     Const_mapContext = _inline_Context
     Const_map_entryContext = _inline_Context
     List_separatorContext = _inline_Context
     Enum_fieldContext = _inline_Context
 
-    def Enum_ruleContext(self, node):
-        self._inline_nodes(node.children[:3])
-        self._newline()
-        fields, left = self.get_repeat_children(node.children[3:], ThriftParser.Enum_fieldContext)
-        self._block_nodes(fields, indent=' '*4)
-        self._newline()
-        # TODO: type_annotation
-        self._inline_nodes(left)
+    def _gen_subfields_Context(_, start, field_class):
+        def _subfields_Context(self, node):
+            self._inline_nodes(node.children[:start])
+            self._newline()
+            fields, left = self.get_repeat_children(node.children[start:], field_class)
+            self._block_nodes(fields, indent=' '*4)
+            self._newline()
+            self._inline_nodes(left)
+        return _subfields_Context
 
-    def Struct_Context(self, node):
-        self._inline_nodes(node.children[:3])
-        self._newline()
-        #import pdb
-        #pdb.set_trace()
-        fields, left = self.get_repeat_children(node.children[3:], ThriftParser.FieldContext)
-        self._block_nodes(fields, indent=' '*4)
-        self._newline()
-        self._inline_nodes(left)
+    Enum_ruleContext = _gen_subfields_Context(None, 3, ThriftParser.Enum_fieldContext)
+    Struct_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+    Union_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+    ExceptionContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+
+    FieldContext = _inline_Context  # TODO
+    Field_idContext = _inline_Context
+    Field_reqContext = _inline_Context
+
+    # TODO extends
+    ServiceContext = _gen_subfields_Context(None, 3, ThriftParser.Function_Context)
+    Function_Context = _inline_Context
+    OnewayContext = _inline_Context
+    Function_typeContext = _inline_Context
+    Throws_listContext = _inline_Context
+    Type_annotationsContext = _inline_Context
+    Type_annotationContext = _inline_Context
+    Annotation_valueContext = _inline_Context
 
 '''
 SenumContext
-Union_Context
-ExceptionContext
-ServiceContext
-FieldContext
-Field_idContext
-Field_reqContext
-Function_Context
-OnewayContext
-Function_typeContext
-Throws_listContext
-Type_annotationsContext
-Type_annotationContext
-Annotation_valueContext
-Field_typeContext
-
-Container_typeContext
-Map_typeContext
-Set_typeContext
-List_typeContext
-Cpp_typeContext
-Const_listContext
-Const_map_entryContext
-Const_mapContext
-List_separatorContext
-Real_base_typeContext
 '''
