@@ -99,33 +99,44 @@ class ThriftFormatter(object):
             self.push(indent)
             self.process_node(child)
 
+    def iter_nodes_v2(self, nodes, indent=None, join=" ", split=False):
+        last = None
+        for i, node in enumerate(nodes):
+            if i > 0:
+                if join == "\n":
+                    self._newline()
+                else:
+                    self.push(join)
+                if split and nodes[i-1].__class__ != node.__class__:
+                    self._newline(2)
+
+            if indent:
+                self.push(indent)
+            self.process_node(node)
+
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         self.push_token(node)
 
     def DocumentContext(self, node):
         self.push('# fmt by thrift-fmt')
         self._newline()
-        self.iter_children(node)
+        self.iter_nodes_v2(node.children, join='\n', split=True)
         self._newline()
 
     def HeaderContext(self, node):
-        self.iter_children(node)
-        self._newline()
+        self.iter_nodes_v2(node.children, join='\n', split=True)
+        self._newline(2)
 
     def Include_Context(self, node):
-        self.iter_children_line(node)
+        self.iter_nodes_v2(node.children, join=' ')
 
     def Namespace_Context(self, node):
-        self._newline(2)
         self.push_tokens(node.children[:3])
         if len(node.children) > 3:
             self.process_node(node.children[3])
-        self._newline()
 
     def DefinitionContext(self, node):
-        # TODO: assert same
-        self.iter_children(node)
-        self._newline(1)
+        self.iter_nodes_v2(node.children, join='\n', split=True)
 
     def Typedef_Context(self, node):
         self.push('typedef ')
