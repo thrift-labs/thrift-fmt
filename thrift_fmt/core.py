@@ -100,10 +100,10 @@ class ThriftFormatter(object):
             self.process_node(node)
             last_node = node
 
-    def _inline_nodes(self, nodes):
+    def _inline_nodes(self, nodes, join=' '):
         for i, node in enumerate(nodes):
             if i > 0:
-                self.push(' ')
+                self.push(join)
             self.process_node(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
@@ -172,8 +172,17 @@ class ThriftFormatter(object):
     Field_idContext = _inline_Context
     Field_reqContext = _inline_Context
 
-    # TODO extends
-    ServiceContext = _gen_subfields_Context(None, 3, ThriftParser.Function_Context)
+    def Field_idContext(self, node):
+        self._inline_nodes(node.children, join='')
+
+    def ServiceContext(self, node):
+        fn = self._gen_subfields_Context(3, ThriftParser.Function_Context)
+        if isinstance(node.children[2], TerminalNodeImpl):
+            if node.children[2].symbol.text == 'extends':
+                fn = self._gen_subfields_Context(5, ThriftParser.Function_Context)
+
+        return fn(self, node)
+
     Function_Context = _inline_Context
     OnewayContext = _inline_Context
     Function_typeContext = _inline_Context
