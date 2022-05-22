@@ -171,7 +171,13 @@ class ThriftFormatter(object):
     Const_valueContext = _inline_Context
     IntegerContext = _gen_inline_Context(join='')
     Container_typeContext = _gen_inline_Context(join='')
-    Map_typeContext = _gen_inline_Context(join='') # TODO add ' ' before value
+
+    def Map_typeContext(self, node: ThriftParser.Map_typeContext):
+        head = 4 if len(node.children) == 6 else 5
+        self._inline_nodes(node.children[:head], join='')
+        self.push(' ') # after COMMA
+        self._inline_nodes(node.children[head:], join='')
+
     Set_typeContext = _gen_inline_Context(join='')
     List_typeContext = _gen_inline_Context(join='')
 
