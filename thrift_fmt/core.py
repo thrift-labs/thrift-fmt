@@ -40,7 +40,7 @@ class ThriftFormatter(object):
         self._newline_c = 0
         self.process_node(self._document)
 
-    def push(self, text):
+    def _push(self, text):
         if not text:
             return
         self._out.write(text)
@@ -52,12 +52,6 @@ class ThriftFormatter(object):
             return
         self._out.write('\n'*diff)
         self._newline_c += diff
-
-    def push_token(self, node: TerminalNodeImpl):
-        assert isinstance(node, TerminalNodeImpl)
-        if node.symbol.type == ThriftParser.EOF:
-            return
-        self.push(node.symbol.text)
 
     def process_node(self, node):
         if not isinstance(node, TerminalNodeImpl):
@@ -105,21 +99,24 @@ class ThriftFormatter(object):
                 else:
                     self._newline()
 
-            self.push(indent)
+            self._push(indent)
             self.process_node(node)
             last_node = node
 
     def _inline_nodes(self, nodes, join=' '):
         for i, node in enumerate(nodes):
             if i > 0:
-                self.push(join)
+                self._push(join)
             self.process_node(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
-        self.push_token(node)
+        assert isinstance(node, TerminalNodeImpl)
+        if node.symbol.type == ThriftParser.EOF:
+            return
+        self._push(node.symbol.text)
 
     def DocumentContext(self, node):
-        self.push('# fmt by thrift-fmt')
+        self._push('# fmt by thrift-fmt')
         self._newline()
         self._block_nodes(node.children)
         self._newline()
@@ -175,7 +172,7 @@ class ThriftFormatter(object):
     def Map_typeContext(self, node: ThriftParser.Map_typeContext):
         head = 4 if len(node.children) == 6 else 5
         self._inline_nodes(node.children[:head], join='')
-        self.push(' ') # after COMMA
+        self._push(' ') # after COMMA
         self._inline_nodes(node.children[head:], join='')
 
     Set_typeContext = _gen_inline_Context(join='')

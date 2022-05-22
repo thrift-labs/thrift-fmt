@@ -10,6 +10,7 @@ def run_fmt(file):
     fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data.document)
+
     out = io.StringIO()
     fmt.format(out)
     return out.getvalue()
