@@ -31,3 +31,8 @@ def test_thrift_test():
     out = run_fmt('ThriftTest.thrift')
     print(out)
     assert len(out) == 5197
+
+def test_AnnotationTest():
+    out = run_fmt('AnnotationTest.thrift')
+    print(out)
+    assert len(out) == 5197

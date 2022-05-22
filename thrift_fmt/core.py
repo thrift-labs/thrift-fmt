@@ -67,6 +67,7 @@ class ThriftFormatter(object):
 
         method_name = node.__class__.__name__.split('.')[-1]
         fn = getattr(self, method_name, None)
+        print(type(node))
         assert fn
         fn(node)
 
@@ -175,6 +176,11 @@ class ThriftFormatter(object):
     Struct_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
     Union_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
     ExceptionContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+    #SenumContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+
+    def SenumContext(self, node):
+        # TODO: add more rule
+        pass
 
     FieldContext = _inline_Context  # TODO
     Field_idContext = _inline_Context
@@ -198,7 +204,3 @@ class ThriftFormatter(object):
     Type_annotationsContext = _inline_Context
     Type_annotationContext = _inline_Context
     Annotation_valueContext = _inline_Context
-
-'''
-SenumContext
-'''
