@@ -67,7 +67,7 @@ class ThriftFormatter(object):
 
         method_name = node.__class__.__name__.split('.')[-1]
         fn = getattr(self, method_name, None)
-        print(type(node))
+        # print(type(node))
         assert fn
         fn(node)
 
@@ -142,6 +142,25 @@ class ThriftFormatter(object):
             self._inline_nodes(node.children[:-1])
             self.process_node(node.children[-1])
 
+    def _gen_inline_Context(join=' '):
+        def fn(self, node):
+            self._inline_nodes(node.children, join=join)
+        return fn
+
+    Type_ruleContext = _gen_inline_Context(join='')
+    Const_ruleContext = _gen_inline_Context(join='')
+    Enum_fieldContext = _gen_inline_Context(join='')
+    Function_Context = _gen_inline_Context(join='')
+    Field_ruleContext = _gen_inline_Context(join='')
+    Type_ruleContext = _gen_inline_Context(join='')
+    Type_annotationContext = _gen_inline_Context(join='')
+    Type_idContext = _gen_inline_Context(join='')
+    Type_listContext = _gen_inline_Context(join='')
+    Type_mapContext = _gen_inline_Context(join='')
+    Type_setContext = _gen_inline_Context(join='')
+    Type_baseContext = _gen_inline_Context(join='')
+    Type_identifierContext = _gen_inline_Context(join='')
+
     Include_Context = _inline_Context
     Namespace_Context = _inline_Context_type_annotation
     Typedef_Context = _inline_Context_type_annotation
@@ -150,11 +169,12 @@ class ThriftFormatter(object):
     Real_base_typeContext = _inline_Context
     Const_ruleContext = _inline_Context
     Const_valueContext = _inline_Context
-    IntegerContext = _inline_Context
-    Container_typeContext = _inline_Context
-    Map_typeContext = _inline_Context
-    Set_typeContext = _inline_Context
-    List_typeContext = _inline_Context
+    IntegerContext = _gen_inline_Context(join='')
+    Container_typeContext = _gen_inline_Context(join='')
+    Map_typeContext = _gen_inline_Context(join='') # TODO add ' ' before value
+    Set_typeContext = _gen_inline_Context(join='')
+    List_typeContext = _gen_inline_Context(join='')
+
     Cpp_typeContext = _inline_Context
     Const_listContext = _inline_Context
     Const_mapContext = _inline_Context
