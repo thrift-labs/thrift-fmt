@@ -81,6 +81,15 @@ class ThriftFormatter(object):
     def is_EOF(self, node):
         return isinstance(node, TerminalNodeImpl) and node.symbol.type == ThriftParser.EOF
 
+    def is_newline_node(self, node):
+        return isinstance(node,
+            (ThriftParser.Enum_ruleContext,
+            ThriftParser.Struct_Context,
+            ThriftParser.Union_Context,
+            ThriftParser.ExceptionContext,
+            ThriftParser.ServiceContext,
+        ))
+
     def _block_nodes(self, nodes, indent=''):
         last_node = None
         for i, node in enumerate(nodes):
@@ -90,8 +99,7 @@ class ThriftFormatter(object):
             if isinstance(node, (ThriftParser.HeaderContext, ThriftParser.DefinitionContext)):
                 node = node.children[0]
             if i > 0:
-                # TODO: skip struct/enum/senum/service
-                if node.__class__ != last_node.__class__:
+                if node.__class__ != last_node.__class__ or self.is_newline_node(node):
                     self._newline(2)
                 else:
                     self._newline()
