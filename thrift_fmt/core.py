@@ -34,6 +34,7 @@ class ThriftFormatter(object):
         self._document = document
         self._out = sys.stdout
         self._newline_c = 0
+        self._ = False
 
     def format(self, out: typing.TextIO):
         self._out = out
@@ -53,6 +54,65 @@ class ThriftFormatter(object):
         self._out.write('\n'*diff)
         self._newline_c += diff
 
+    def _walk(self, fn):
+        self._document.parent = None
+        nodes = [self._document]
+        while nodes:
+            node = nodes.pop(0)
+            fn(node)
+            if not isinstance(node, TerminalNodeImpl):
+                for child in node.children:
+                    child.parent = node
+                nodes.extend(node.children)
+
+    def _patch_field_req(self, node):
+        if not isinstance(node, ThriftParser.FieldContext):
+            return
+        if isinstance(node.parent, ThriftParser.Function_Context):
+            return
+
+        for i, child in enumerate(node.children):
+            if isinstance(child, ThriftParser.Field_reqContext):
+                return
+            if isinstance(child, ThriftParser.Field_typeContext):
+                break
+
+        fake_token = CommonToken()
+        fake_token.type = 21
+        fake_token.text = 'required'
+        fake_token.is_fake = True
+        fake_node = TerminalNodeImpl(fake_token)
+        fake_req = ThriftParser.Field_reqContext(parser=node.parser)
+        fake_req.children = [fake_node]
+        # patch
+        node.children.insert(i, fake_req)
+
+    def _patch_field_list_separator(self, node):
+        classes = (
+            ThriftParser.Enum_fieldContext,
+            ThriftParser.FieldContext,
+            ThriftParser.Function_Context,
+        )
+        if not isinstance(node, classes):
+            return
+        last = node.children[-1]
+        if isinstance(last, ThriftParser.List_separatorContext):
+            # TODO: consider COMMA
+            last.children[0].symbol.text = ';'
+            return
+
+        fake_token = CommonToken()
+        fake_token.text = ';'
+        fake_token.is_fake = True
+        fake_node = TerminalNodeImpl(fake_token)
+        fake_ctx = ThriftParser.List_separatorContext(parser=node.parser)
+        fake_ctx.children = [fake_node]
+        node.children.append(fake_ctx)
+
+    def patch(self):
+        self._walk(self._patch_field_req)
+        self._walk(self._patch_field_list_separator)
+
     def process_node(self, node):
         if not isinstance(node, TerminalNodeImpl):
             # add parent
@@ -61,8 +121,9 @@ class ThriftFormatter(object):
 
         method_name = node.__class__.__name__.split('.')[-1]
         fn = getattr(self, method_name, None)
-        # print(type(node))
         assert fn
+        # process children
+
         fn(node)
 
     def get_repeat_children(self, nodes, cls):
