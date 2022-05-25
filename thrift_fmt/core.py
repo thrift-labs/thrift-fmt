@@ -7,7 +7,6 @@ from antlr4.StdinStream import StdinStream
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 
-from thrift_parser import parse
 from thrift_parser.ThriftParser import ThriftParser
 
 
@@ -95,23 +94,44 @@ class ThriftFormatter(object):
         )
         if not isinstance(node, classes):
             return
-        last = node.children[-1]
-        if isinstance(last, ThriftParser.List_separatorContext):
-            # TODO: consider COMMA
-            last.children[0].symbol.text = ';'
+
+        tail = node.children[-1]
+        if isinstance(tail, ThriftParser.List_separatorContext):
+            tail.children[0].symbol.text = ','
             return
 
         fake_token = CommonToken()
-        fake_token.text = ';'
+        fake_token.text = ','
         fake_token.is_fake = True
         fake_node = TerminalNodeImpl(fake_token)
         fake_ctx = ThriftParser.List_separatorContext(parser=node.parser)
         fake_ctx.children = [fake_node]
         node.children.append(fake_ctx)
 
+    def _patch_field_remove_last_list_separator(self, node):
+        if not isinstance(node, ThriftParser.FieldContext):
+            return
+        if not isinstance(node.parent, ThriftParser.Function_Context):
+            return
+
+        is_last_field = False
+        brothers = node.parent.children
+        for i, child in enumerate(brothers):
+            if child is node and i < len(brothers) - 1:
+                if not isinstance(brothers[i + 1], child.__class__):
+                    is_last_field = True
+
+        if not is_last_field:
+            return
+
+        # remove function last field
+        if isinstance(node.children[-1], ThriftParser.List_separatorContext):
+            node.children.pop()
+
     def patch(self):
         self._walk(self._patch_field_req)
         self._walk(self._patch_field_list_separator)
+        self._walk(self._patch_field_remove_last_list_separator)
 
     def process_node(self, node):
         if not isinstance(node, TerminalNodeImpl):
@@ -134,8 +154,11 @@ class ThriftFormatter(object):
             children.append(child)
         return children, []
 
-    def is_EOF(self, node):
+    def _is_EOF(self, node):
         return isinstance(node, TerminalNodeImpl) and node.symbol.type == ThriftParser.EOF
+
+    def _is_token(self, node, text):
+        return isinstance(node, TerminalNodeImpl) and node.symbol.text == text
 
     def is_newline_node(self, node):
         return isinstance(node,
@@ -149,11 +172,12 @@ class ThriftFormatter(object):
     def _block_nodes(self, nodes, indent=''):
         last_node = None
         for i, node in enumerate(nodes):
-            if self.is_EOF(node):
+            if self._is_EOF(node):
                 break
 
             if isinstance(node, (ThriftParser.HeaderContext, ThriftParser.DefinitionContext)):
                 node = node.children[0]
+
             if i > 0:
                 if node.__class__ != last_node.__class__ or self.is_newline_node(node):
                     self._newline(2)
@@ -208,7 +232,6 @@ class ThriftFormatter(object):
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
     Enum_fieldContext = _gen_inline_Context(join='')
-    Function_Context = _gen_inline_Context(join='')
     Field_ruleContext = _gen_inline_Context(join='')
     Type_ruleContext = _gen_inline_Context(join='')
     Type_annotationContext = _gen_inline_Context(join='')
@@ -281,7 +304,14 @@ class ThriftFormatter(object):
 
         return fn(self, node)
 
-    Function_Context = _inline_Context
+    def Function_Context(self, node):
+        nodes = node.children
+        for i, child in enumerate(nodes):
+            if i > 0:
+                if not (self._is_token(child, '(') or self._is_token(nodes[i-1], '(')):
+                    self._push(' ')
+            self.process_node(child)
+
     OnewayContext = _inline_Context
     Function_typeContext = _inline_Context
     Throws_listContext = _inline_Context
