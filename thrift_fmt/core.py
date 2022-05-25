@@ -7,6 +7,7 @@ from antlr4.StdinStream import StdinStream
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 
+from thrift_parser import parse
 from thrift_parser.ThriftParser import ThriftParser
 
 
@@ -135,7 +136,6 @@ class ThriftFormatter(object):
 
     def process_node(self, node):
         if not isinstance(node, TerminalNodeImpl):
-            # add parent
             for child in node.children:
                 child.parent = node
 
@@ -201,7 +201,7 @@ class ThriftFormatter(object):
         self._push(node.symbol.text)
 
     def DocumentContext(self, node):
-        self._push('# fmt by thrift-fmt')
+        # self._push('# fmt by thrift-fmt')
         self._newline()
         self._block_nodes(node.children)
         self._newline()
