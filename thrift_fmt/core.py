@@ -1,15 +1,21 @@
 import sys
 import typing
+from typing import List
 
 from antlr4.InputStream import InputStream
 from antlr4.FileStream import FileStream
 from antlr4.StdinStream import StdinStream
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
+from antlr4.tree.Tree import ParseTree
+from antlr4 import ParserRuleContext
+
 
 from thrift_parser import parse
 from thrift_parser.ThriftParser import ThriftParser
 
+Node = ParseTree
+Nodes = typing.List[ParseTree]
 
 class ThriftData(object):
 
@@ -54,6 +60,11 @@ class ThriftFormatter(object):
         self._out.write('\n'*diff)
         self._newline_c += diff
 
+    def patch(self):
+        self._walk(self._patch_field_req)
+        self._walk(self._patch_field_list_separator)
+        self._walk(self._patch_remove_last_list_separator)
+
     def _walk(self, fn):
         self._document.parent = None
         nodes = [self._document]
@@ -65,7 +76,7 @@ class ThriftFormatter(object):
                     child.parent = node
                 nodes.extend(node.children)
 
-    def _patch_field_req(self, node):
+    def _patch_field_req(self, node: ParseTree):
         if not isinstance(node, ThriftParser.FieldContext):
             return
         if isinstance(node.parent, ThriftParser.Function_Context):
@@ -87,7 +98,7 @@ class ThriftFormatter(object):
         # patch
         node.children.insert(i, fake_req)
 
-    def _patch_field_list_separator(self, node):
+    def _patch_field_list_separator(self, node: ParseTree):
         classes = (
             ThriftParser.Enum_fieldContext,
             ThriftParser.FieldContext,
@@ -109,14 +120,14 @@ class ThriftFormatter(object):
         fake_ctx.children = [fake_node]
         node.children.append(fake_ctx)
 
-    def _patch_remove_last_list_separator(self, node):
+    def _patch_remove_last_list_separator(self, node: ParseTree):
         is_inline_field = isinstance(node, ThriftParser.FieldContext) and \
             isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
         is_inline_node = isinstance(node, ThriftParser.Type_annotationContext)
         if is_inline_field or is_inline_node:
             self._remove_last_list_separator(node)
 
-    def _remove_last_list_separator(self, node):
+    def _remove_last_list_separator(self, node: ParseTree):
         if not node.parent:
             return
 
@@ -131,12 +142,7 @@ class ThriftFormatter(object):
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
-    def patch(self):
-        self._walk(self._patch_field_req)
-        self._walk(self._patch_field_list_separator)
-        self._walk(self._patch_remove_last_list_separator)
-
-    def process_node(self, node):
+    def process_node(self, node: ParseTree):
         if not isinstance(node, TerminalNodeImpl):
             for child in node.children:
                 child.parent = node
@@ -148,7 +154,7 @@ class ThriftFormatter(object):
 
         fn(node)
 
-    def get_repeat_children(self, nodes, cls):
+    def _get_repeat_children(self, nodes: List[ParseTree], cls: typing.Type[ParserRuleContext]):
         children = []
         for i, child in enumerate(nodes):
             if not isinstance(child, cls):
@@ -156,13 +162,13 @@ class ThriftFormatter(object):
             children.append(child)
         return children, []
 
-    def _is_EOF(self, node):
+    def _is_EOF(self, node: ParseTree):
         return isinstance(node, TerminalNodeImpl) and node.symbol.type == ThriftParser.EOF
 
-    def _is_token(self, node, text):
+    def _is_token(self, node: ParseTree, text: str):
         return isinstance(node, TerminalNodeImpl) and node.symbol.text == text
 
-    def is_newline_node(self, node):
+    def is_newline_node(self, node: ParseTree):
         return isinstance(node,
             (ThriftParser.Enum_ruleContext,
             ThriftParser.Struct_Context,
@@ -171,7 +177,7 @@ class ThriftFormatter(object):
             ThriftParser.ServiceContext,
         ))
 
-    def _block_nodes(self, nodes, indent=''):
+    def _block_nodes(self, nodes: List[ParseTree], indent: str = ''):
         last_node = None
         for i, node in enumerate(nodes):
             if self._is_EOF(node):
@@ -190,38 +196,17 @@ class ThriftFormatter(object):
             self.process_node(node)
             last_node = node
 
-    def _inline_nodes(self, nodes, join=' '):
+    def _inline_nodes(self, nodes: List[ParseTree], join=' '):
         for i, node in enumerate(nodes):
             if i > 0:
                 self._push(join)
             self.process_node(node)
 
-    def TerminalNodeImpl(self, node: TerminalNodeImpl):
-        assert isinstance(node, TerminalNodeImpl)
-        if node.symbol.type == ThriftParser.EOF:
-            return
-        self._push(node.symbol.text)
-
-    def DocumentContext(self, node):
-        # self._push('# fmt by thrift-fmt')
-        self._newline()
-        self._block_nodes(node.children)
-        self._newline()
-
-    def HeaderContext(self, node):
-        assert False
-
-    def DefinitionContext(self, node):
-        assert False
-
-    def _inline_Context(self, node):
-        self._inline_nodes(node.children)
-
     def _inline_Context_type_annotation(self, node):
         if len(node.children) == 0:
             return
         if not isinstance(node.children[-1], ThriftParser.Type_annotationContext):
-            self._inline_Context(node)
+            self._inline_nodes(node.children)
         else:
             self._inline_nodes(node.children[:-1])
             self.process_node(node.children[-1])
@@ -234,6 +219,28 @@ class ThriftFormatter(object):
                         self._push(join)
                 self.process_node(child)
         return fn
+
+    def _gen_subfields_Context(_, start, field_class):
+        def fn(self, node):
+            self._inline_nodes(node.children[:start])
+            self._newline()
+            fields, left = self._get_repeat_children(node.children[start:], field_class)
+            self._block_nodes(fields, indent=' '*4)
+            self._newline()
+            self._inline_nodes(left)
+        return fn
+
+    def TerminalNodeImpl(self, node: TerminalNodeImpl):
+        assert isinstance(node, TerminalNodeImpl)
+        if node.symbol.type == ThriftParser.EOF:
+            return
+        # TODO: process the comment
+        self._push(node.symbol.text)
+
+    def DocumentContext(self, node):
+        self._newline()
+        self._block_nodes(node.children)
+        self._newline()
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
@@ -248,16 +255,24 @@ class ThriftFormatter(object):
     Type_baseContext = _gen_inline_Context(join='')
     Type_identifierContext = _gen_inline_Context(join='')
 
-    Include_Context = _inline_Context
+    Include_Context = _gen_inline_Context()
     Namespace_Context = _inline_Context_type_annotation
     Typedef_Context = _inline_Context_type_annotation
     Base_typeContext = _inline_Context_type_annotation
-    Field_typeContext = _inline_Context
-    Real_base_typeContext = _inline_Context
-    Const_ruleContext = _inline_Context
-    Const_valueContext = _inline_Context
-    IntegerContext = _gen_inline_Context(join='')
+    Field_typeContext = _gen_inline_Context()
+    Real_base_typeContext = _gen_inline_Context()
+    Const_ruleContext = _gen_inline_Context()
+    Const_valueContext = _gen_inline_Context()
+    IntegerContext = _gen_inline_Context()
     Container_typeContext = _gen_inline_Context(join='')
+    Set_typeContext = _gen_inline_Context(join='')
+    List_typeContext = _gen_inline_Context(join='')
+    Cpp_typeContext = _gen_inline_Context()
+    Const_mapContext = _gen_inline_Context()
+    Const_map_entryContext = _gen_inline_Context()
+    List_separatorContext = _gen_inline_Context()
+    Field_idContext = _gen_inline_Context(join='')
+    Field_reqContext = _gen_inline_Context()
 
     def Map_typeContext(self, node: ThriftParser.Map_typeContext):
         head = 4 if len(node.children) == 6 else 5
@@ -265,39 +280,17 @@ class ThriftFormatter(object):
         self._push(' ') # after COMMA
         self._inline_nodes(node.children[head:], join='')
 
-    Set_typeContext = _gen_inline_Context(join='')
-    List_typeContext = _gen_inline_Context(join='')
-
-    Cpp_typeContext = _inline_Context
     Const_listContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
-
-    Const_mapContext = _inline_Context
-    Const_map_entryContext = _inline_Context
-    List_separatorContext = _inline_Context
-
-    def _gen_subfields_Context(_, start, field_class):
-        def _subfields_Context(self, node):
-            self._inline_nodes(node.children[:start])
-            self._newline()
-            fields, left = self.get_repeat_children(node.children[start:], field_class)
-            self._block_nodes(fields, indent=' '*4)
-            self._newline()
-            self._inline_nodes(left)
-        return _subfields_Context
 
     Enum_ruleContext = _gen_subfields_Context(None, 3, ThriftParser.Enum_fieldContext)
     Struct_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
     Union_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
     ExceptionContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+
     #SenumContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
-
-    def SenumContext(self, node):
-        # TODO: add more rule
+    def SenumContext(self, node):  # TODO: add more rule
         pass
-
-    Field_idContext = _gen_inline_Context(join='')
-    Field_reqContext = _inline_Context
 
     FieldContext = _gen_inline_Context(
         tight_fn=lambda _, child: isinstance(child, ThriftParser.List_separatorContext))
@@ -321,10 +314,10 @@ class ThriftFormatter(object):
                     self._push(' ')
             self.process_node(child)
 
-    OnewayContext = _inline_Context
-    Function_typeContext = _inline_Context
-    Throws_listContext = _inline_Context
-    Type_annotationsContext = _inline_Context
+    OnewayContext = _gen_inline_Context()
+    Function_typeContext = _gen_inline_Context()
+    Throws_listContext = _gen_inline_Context()
+    Type_annotationsContext = _gen_inline_Context()
     Type_annotationContext = _gen_inline_Context(
         tight_fn=lambda _, child: isinstance(child, ThriftParser.List_separatorContext))
-    Annotation_valueContext = _inline_Context
+    Annotation_valueContext = _gen_inline_Context()
