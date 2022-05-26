@@ -17,6 +17,7 @@ from thrift_parser.ThriftParser import ThriftParser
 Node = ParseTree
 Nodes = typing.List[ParseTree]
 
+
 class ThriftData(object):
 
     def __init__(self, input_stream: InputStream):
@@ -169,8 +170,8 @@ class ThriftFormatter(object):
         return isinstance(node, TerminalNodeImpl) and node.symbol.text == text
 
     def is_newline_node(self, node: ParseTree):
-        return isinstance(node,
-            (ThriftParser.Enum_ruleContext,
+        return isinstance(node, (
+            ThriftParser.Enum_ruleContext,
             ThriftParser.Struct_Context,
             ThriftParser.Union_Context,
             ThriftParser.ExceptionContext,
@@ -277,7 +278,7 @@ class ThriftFormatter(object):
     def Map_typeContext(self, node: ThriftParser.Map_typeContext):
         head = 4 if len(node.children) == 6 else 5
         self._inline_nodes(node.children[:head], join='')
-        self._push(' ') # after COMMA
+        self._push(' ')  # after COMMA
         self._inline_nodes(node.children[head:], join='')
 
     Const_listContext = _gen_inline_Context(
@@ -288,7 +289,7 @@ class ThriftFormatter(object):
     Union_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
     ExceptionContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
 
-    #SenumContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+    # SenumContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
     def SenumContext(self, node):  # TODO: add more rule
         pass
 

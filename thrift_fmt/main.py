@@ -1,4 +1,3 @@
-from email.policy import default
 import io
 import click
 import sys
