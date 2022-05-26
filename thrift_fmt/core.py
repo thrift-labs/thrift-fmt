@@ -224,9 +224,13 @@ class ThriftFormatter(object):
             self._inline_nodes(node.children[:-1])
             self.process_node(node.children[-1])
 
-    def _gen_inline_Context(join=' '):
+    def _gen_inline_Context(join=' ', tight_fn=None):
         def fn(self, node):
-            self._inline_nodes(node.children, join=join)
+            for i, child in enumerate(node.children):
+                if i > 0 and len(join) > 0:
+                    if not tight_fn or not tight_fn(i, child):
+                        self._push(join)
+                self.process_node(child)
         return fn
 
     Type_ruleContext = _gen_inline_Context(join='')
@@ -263,11 +267,12 @@ class ThriftFormatter(object):
     List_typeContext = _gen_inline_Context(join='')
 
     Cpp_typeContext = _inline_Context
-    Const_listContext = _inline_Context
+    Const_listContext = _gen_inline_Context(
+        tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
+
     Const_mapContext = _inline_Context
     Const_map_entryContext = _inline_Context
     List_separatorContext = _inline_Context
-    Enum_fieldContext = _inline_Context
 
     def _gen_subfields_Context(_, start, field_class):
         def _subfields_Context(self, node):
@@ -289,12 +294,11 @@ class ThriftFormatter(object):
         # TODO: add more rule
         pass
 
-    FieldContext = _inline_Context  # TODO
     Field_idContext = _inline_Context
     Field_reqContext = _inline_Context
 
-    def Field_idContext(self, node):
-        self._inline_nodes(node.children, join='')
+    FieldContext = _gen_inline_Context(
+        tight_fn=lambda _, child: isinstance(child, ThriftParser.List_separatorContext))
 
     def ServiceContext(self, node):
         fn = self._gen_subfields_Context(3, ThriftParser.Function_Context)
@@ -308,7 +312,10 @@ class ThriftFormatter(object):
         nodes = node.children
         for i, child in enumerate(nodes):
             if i > 0:
-                if not (self._is_token(child, '(') or self._is_token(nodes[i-1], '(')):
+                is_tight = self._is_token(child, '(') or \
+                    self._is_token(nodes[i-1], '(') or \
+                    isinstance(child, ThriftParser.List_separatorContext)
+                if not is_tight:
                     self._push(' ')
             self.process_node(child)
 
@@ -316,5 +323,6 @@ class ThriftFormatter(object):
     Function_typeContext = _inline_Context
     Throws_listContext = _inline_Context
     Type_annotationsContext = _inline_Context
-    Type_annotationContext = _inline_Context
+    Type_annotationContext = _gen_inline_Context(
+        tight_fn=lambda _, child: isinstance(child, ThriftParser.List_separatorContext))
     Annotation_valueContext = _inline_Context
