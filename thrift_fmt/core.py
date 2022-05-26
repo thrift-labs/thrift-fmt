@@ -109,30 +109,32 @@ class ThriftFormatter(object):
         fake_ctx.children = [fake_node]
         node.children.append(fake_ctx)
 
-    def _patch_field_remove_last_list_separator(self, node):
-        if not isinstance(node, ThriftParser.FieldContext):
-            return
-        if not isinstance(node.parent, ThriftParser.Function_Context):
+    def _patch_remove_last_list_separator(self, node):
+        is_inline_field = isinstance(node, ThriftParser.FieldContext) and \
+            isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
+        is_inline_node = isinstance(node, ThriftParser.Type_annotationContext)
+        if is_inline_field or is_inline_node:
+            self._remove_last_list_separator(node)
+
+    def _remove_last_list_separator(self, node):
+        if not node.parent:
             return
 
-        is_last_field = False
+        is_last = False
         brothers = node.parent.children
         for i, child in enumerate(brothers):
             if child is node and i < len(brothers) - 1:
                 if not isinstance(brothers[i + 1], child.__class__):
-                    is_last_field = True
+                    is_last = True
+                    break
 
-        if not is_last_field:
-            return
-
-        # remove function last field
-        if isinstance(node.children[-1], ThriftParser.List_separatorContext):
+        if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
     def patch(self):
         self._walk(self._patch_field_req)
         self._walk(self._patch_field_list_separator)
-        self._walk(self._patch_field_remove_last_list_separator)
+        self._walk(self._patch_remove_last_list_separator)
 
     def process_node(self, node):
         if not isinstance(node, TerminalNodeImpl):
@@ -294,7 +296,7 @@ class ThriftFormatter(object):
         # TODO: add more rule
         pass
 
-    Field_idContext = _inline_Context
+    Field_idContext = _gen_inline_Context(join='')
     Field_reqContext = _inline_Context
 
     FieldContext = _gen_inline_Context(
