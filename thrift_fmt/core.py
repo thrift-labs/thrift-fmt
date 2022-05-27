@@ -45,13 +45,13 @@ class ThriftFormatter(object):
         self._newline_c = 0
         self.process_node(self._document)
 
-    def _push(self, text):
+    def _push(self, text: str):
         if not text:
             return
         self._out.write(text)
         self._newline_c = 0
 
-    def _newline(self, repeat=1):
+    def _newline(self, repeat: int=1):
         diff = repeat - self._newline_c
         if diff <= 0:
             return
