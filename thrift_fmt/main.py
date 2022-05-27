@@ -11,6 +11,8 @@ from .core import ThriftData, ThriftFormatter
 def main(fout=None, fin=None):
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data.document)
+    fmt.patch()
+
     if fout is None:
         fmt.format(sys.stdout)
     else:
