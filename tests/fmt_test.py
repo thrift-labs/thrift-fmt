@@ -21,23 +21,23 @@ def run_fmt(file, patch=True):
 def test_simple():
     out = run_fmt('simple.thrift', patch=True)
     print(out)
-    assert len(out) == 69
+    assert len(out) == 50
     assert out.count('\n') == 3
 
 
 def test_complex():
     out = run_fmt('tutorial.thrift', patch=True)
     print(out)
-    assert len(out) == 828
+    assert len(out) == 831
 
 
 def test_thrift_test():
     out = run_fmt('ThriftTest.thrift')
     print(out)
-    assert len(out) == 5197
+    assert len(out) == 5444
 
 
 def test_AnnotationTest():
     out = run_fmt('AnnotationTest.thrift')
     print(out)
-    assert len(out) == 5197
+    assert len(out) == 1223
