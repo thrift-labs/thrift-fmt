@@ -38,10 +38,12 @@ class ThriftFormatter(object):
         self._document = data.document
         self._out = None
         self._newline_c = 0
+        self._last_token_index = -1
 
     def format(self, out: typing.TextIO):
         self._out = out
         self._newline_c = 0
+        self._last_token_index = -1
         self.process_node(self._document)
 
     def _push(self, text: str):
@@ -140,10 +142,28 @@ class ThriftFormatter(object):
             node.children.pop()
 
     def _check_comment(self, node: TerminalNodeImpl):
-        if self._is_EOF(node):
+        if hasattr(node, 'is_fake') and node.is_fake:
             return
-        # TODO:
-        pass
+        token_index = node.symbol.tokenIndex
+        comments = []
+        for token in self._data._tokens:
+            if token.channel != 2:
+                continue
+            if self._last_token_index < token.tokenIndex < token_index:
+                comments.append(token)
+
+        #import pdb
+        #pdb.set_trace()
+        print("got comments ", len(comments), self._last_token_index, token_index)
+        for i, token in enumerate(comments):
+            self._push(token.text.strip())
+            if token.type == ThriftParser.ML_COMMENT:
+                self._newline(2)
+            else:
+                self._newline()
+        #import pdb
+        #pdb.set_trace()
+        self._last_token_index = node.symbol.tokenIndex
 
     def process_node(self, node: ParseTree):
         if not isinstance(node, TerminalNodeImpl):
@@ -185,8 +205,9 @@ class ThriftFormatter(object):
     def _block_nodes(self, nodes: List[ParseTree], indent: str = ''):
         last_node = None
         for i, node in enumerate(nodes):
-            if self._is_EOF(node):
-                break
+            #if self._is_EOF(node):
+            #    self._check_comment(node)
+            #    break
 
             if isinstance(node, (ThriftParser.HeaderContext, ThriftParser.DefinitionContext)):
                 node = node.children[0]

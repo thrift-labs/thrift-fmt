@@ -1,6 +1,21 @@
-include "shared.thrift"
+/*x
+
+ y*/
 
 
-include "shared2.thrift"
+// hello
+include "shared.thrift"  // hello3
+/*x
+
+ y*/
+
+# a
 
 
+// b
+include "shared2.thrift" //a
+
+// gt
+
+/*xyz
+*/
