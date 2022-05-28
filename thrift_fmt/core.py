@@ -1,5 +1,5 @@
 import typing
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from antlr4.InputStream import InputStream
 from antlr4.FileStream import FileStream
@@ -61,7 +61,7 @@ class ThriftFormatter(object):
         self._walk(self._patch_field_list_separator)
         self._walk(self._patch_remove_last_list_separator)
 
-    def _walk(self, fn: typing.Callable[[ParseTree], None]):
+    def _walk(self, fn: Callable[[ParseTree], None]):
         self._document.parent = None
         nodes = [self._document]
         while nodes:
@@ -202,7 +202,7 @@ class ThriftFormatter(object):
 
     def _gen_inline_Context(
             join: str = ' ',
-            tight_fn: Optional[typing.Callable[[ParseTree], None]] = None):
+            tight_fn: Optional[Callable[[ParseTree], None]] = None):
         def fn(self, node: ParseTree):
             for i, child in enumerate(node.children):
                 if i > 0 and len(join) > 0:
