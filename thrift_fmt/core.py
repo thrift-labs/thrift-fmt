@@ -1,7 +1,5 @@
-from curses import noecho
-import sys
 import typing
-from typing import List
+from typing import List, Optional
 
 from antlr4.InputStream import InputStream
 from antlr4.FileStream import FileStream
@@ -26,12 +24,12 @@ class ThriftData(object):
     @classmethod
     def from_file(cls, file: str):
         input_stream = FileStream(file, encoding='utf8')
-        return ThriftData(input_stream)
+        return cls(input_stream)
 
     @classmethod
     def from_stdin(cls):
         input_stream = StdinStream(encoding='utf8')
-        return ThriftData(input_stream)
+        return cls(input_stream)
 
 
 class ThriftFormatter(object):
@@ -51,7 +49,7 @@ class ThriftFormatter(object):
         self._out.write(text)
         self._newline_c = 0
 
-    def _newline(self, repeat: int=1):
+    def _newline(self, repeat: int = 1):
         diff = repeat - self._newline_c
         if diff <= 0:
             return
@@ -63,7 +61,7 @@ class ThriftFormatter(object):
         self._walk(self._patch_field_list_separator)
         self._walk(self._patch_remove_last_list_separator)
 
-    def _walk(self, fn):
+    def _walk(self, fn: typing.Callable[[ParseTree], None]):
         self._document.parent = None
         nodes = [self._document]
         while nodes:
@@ -148,8 +146,6 @@ class ThriftFormatter(object):
         method_name = node.__class__.__name__.split('.')[-1]
         fn = getattr(self, method_name, None)
         assert fn
-        # process children
-
         fn(node)
 
     @staticmethod
@@ -198,13 +194,15 @@ class ThriftFormatter(object):
             self.process_node(node)
             last_node = node
 
-    def _inline_nodes(self, nodes: List[ParseTree], join=' '):
+    def _inline_nodes(self, nodes: List[ParseTree], join: str = ' '):
         for i, node in enumerate(nodes):
             if i > 0:
                 self._push(join)
             self.process_node(node)
 
-    def _gen_inline_Context(join=' ', tight_fn=None):
+    def _gen_inline_Context(
+            join: str = ' ',
+            tight_fn: Optional[typing.Callable[[ParseTree], None]] = None):
         def fn(self, node: ParseTree):
             for i, child in enumerate(node.children):
                 if i > 0 and len(join) > 0:
