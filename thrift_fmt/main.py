@@ -10,7 +10,7 @@ from .core import ThriftData, ThriftFormatter
 @click.argument('fout', type=click.Path(file_okay=True, writable=True), required=False)
 def main(fout=None, fin=None):
     data = ThriftData.from_file(fin)
-    fmt = ThriftFormatter(data.document)
+    fmt = ThriftFormatter(data)
     fmt.patch()
 
     if fout is None:

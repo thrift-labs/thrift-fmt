@@ -33,8 +33,9 @@ class ThriftData(object):
 
 
 class ThriftFormatter(object):
-    def __init__(self, document: ParseTree):
-        self._document = document
+    def __init__(self, data: ThriftData):
+        self._data = data
+        self._document = data.document
         self._out = None
         self._newline_c = 0
 
@@ -138,6 +139,12 @@ class ThriftFormatter(object):
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
+    def _check_comment(self, node: TerminalNodeImpl):
+        if self._is_EOF(node):
+            return
+        # TODO:
+        pass
+
     def process_node(self, node: ParseTree):
         if not isinstance(node, TerminalNodeImpl):
             for child in node.children:
@@ -227,9 +234,9 @@ class ThriftFormatter(object):
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
+        self._check_comment(node)
         if self._is_EOF(node):
             return
-        # TODO: process the comment
         self._push(node.symbol.text)
 
     Type_ruleContext = _gen_inline_Context(join='')
