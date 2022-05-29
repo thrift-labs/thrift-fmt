@@ -207,7 +207,7 @@ class ThriftFormatter(object):
         return isinstance(node, TerminalNodeImpl) and node.symbol.text == text
 
     @staticmethod
-    def is_newline_node(node: ParseTree):
+    def _is_newline_node(node: ParseTree):
         return isinstance(node, (
             ThriftParser.Enum_ruleContext,
             ThriftParser.Struct_Context,
@@ -223,7 +223,7 @@ class ThriftFormatter(object):
                 node = node.children[0]
 
             if i > 0:
-                if node.__class__ != last_node.__class__ or self.is_newline_node(node):
+                if node.__class__ != last_node.__class__ or self._is_newline_node(node):
                     self._newline(2)
                 else:
                     self._newline()
