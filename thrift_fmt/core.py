@@ -1,5 +1,4 @@
-from ast import Call
-from sys import stdin
+from __future__ import annotations
 import typing
 from typing import List, Optional, Callable, Tuple
 
@@ -20,27 +19,27 @@ class ThriftData(object):
 
     def __init__(self, input_stream: InputStream):
         _, tokens, _, document = parse(input_stream)
-        self._tokens = tokens.tokens
-        self.document = document
+        self._tokens: List[CommonToken] = tokens.tokens
+        self.document: ThriftParser.DocumentContext = document
 
     @classmethod
-    def from_file(cls, file: str):
+    def from_file(cls, file: str) -> ThriftData:
         input_stream = FileStream(file, encoding='utf8')
         return cls(input_stream)
 
     @classmethod
-    def from_stdin(cls):
+    def from_stdin(cls) -> ThriftData:
         input_stream = StdinStream(encoding='utf8')
         return cls(input_stream)
 
 
 class ThriftFormatter(object):
     def __init__(self, data: ThriftData):
-        self._data = data
-        self._document = data.document
+        self._data: ThriftData = data
+        self._document: ThriftParser.DocumentContext = data.document
         self._newline_c: int = 0
-        self._indent_s = ''
-        self._last_token_index = -1
+        self._indent_s: str = ''
+        self._last_token_index: int = -1
 
     def format(self, out: typing.TextIO):
         self._out = out
@@ -164,14 +163,21 @@ class ThriftFormatter(object):
                 comments.append(token)
 
         for i, token in enumerate(comments):
+            if token.tokenIndex > 0 and token.type == ThriftParser.ML_COMMENT:
+                self._newline(2)
+
             if self._indent_s:
                 self._push(self._indent_s)
             self._push(token.text.strip())
 
-            if token.type == ThriftParser.ML_COMMENT and not self._is_EOF(node):
-                self._newline(2)
-            else:
+            is_tight: bool = token.type == ThriftParser.SL_COMMENT \
+                or self._is_EOF(node) \
+                or 0 < node.symbol.line - (token.text.count('\n') + token.line) <= 1
+            if is_tight:
                 self._newline()
+            else:
+                self._newline(2)
+
         self._last_token_index = node.symbol.tokenIndex
 
     def _tail_comment(self):
