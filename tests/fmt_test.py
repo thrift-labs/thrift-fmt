@@ -1,5 +1,6 @@
 import io
 import os
+import glob
 
 from thrift_fmt.core import ThriftData, ThriftFormatter
 
@@ -41,3 +42,10 @@ def test_AnnotationTest():
     out = run_fmt('AnnotationTest.thrift')
     print(out)
     assert len(out) > 0
+
+def test_all():
+    files = glob.glob('./fixtures/*.thrift')
+    for file in files:
+        file = file.split('/')[-1]
+        run_fmt(file)
+        run_fmt(file, patch=False)
