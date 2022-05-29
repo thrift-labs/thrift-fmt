@@ -264,11 +264,11 @@ class ThriftFormatter(object):
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
 
-        # add tail comment before new line
+        # add tail comment before a new line
         if self._newline_c > 0:
             self._tail_comment()
 
-        # add line comments
+        # add abrove comments
         self._line_comments(node)
 
         if self._is_EOF(node):
@@ -279,12 +279,10 @@ class ThriftFormatter(object):
             self._push(self._indent_s)
             self._indent_s = ''
 
-        # add token
         self._push(node.symbol.text)
 
     def DocumentContext(self, node: ThriftParser.DocumentContext):
         self._block_nodes(node.children)
-        self._newline()
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
@@ -350,6 +348,5 @@ class ThriftFormatter(object):
         return fn(self, node)
 
     def SenumContext(self, node: ThriftParser.SenumContext):
-        # TODO: add more rule
-        # SenumContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+        # deprecated
         pass
