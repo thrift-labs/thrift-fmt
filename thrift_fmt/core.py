@@ -39,30 +39,28 @@ class ThriftFormatter(object):
         self._data = data
         self._document = data.document
         self._newline_c: int = 0
+        self._indent_s = ''
         self._last_token_index = -1
 
     def format(self, out: typing.TextIO):
         self._out = out
         self._newline_c = 0
+        self._indent_s = ''
         self._last_token_index = -1
+
         self.process_node(self._document)
 
     def _push(self, text: str):
-        if not text:
-            return
         self._out.write(text)
-        self._newline_c = 0
 
-    def __newline(self, repeat: int = 1):
+    def _newline(self, repeat: int = 1):
         diff = repeat - self._newline_c
         if diff <= 0:
             return
-        self._out.write('\n'*diff)
         self._newline_c += diff
 
-    def _newline(self, repeat: int = 1):
-        self._tail_comment()
-        self.__newline(repeat)
+    def _indent(self, indent=''):
+        self._indent_s = indent
 
     def patch(self):
         self._walk(self._patch_field_req)
@@ -161,9 +159,9 @@ class ThriftFormatter(object):
         for i, token in enumerate(comments):
             self._push(token.text.strip())  # TODO: support indent
             if token.type == ThriftParser.ML_COMMENT and not self._is_EOF(node):
-                self.__newline(2)
+                self._newline(2)
             else:
-                self.__newline()
+                self._newline()
         self._last_token_index = node.symbol.tokenIndex
 
     def _tail_comment(self):
@@ -235,7 +233,7 @@ class ThriftFormatter(object):
                 else:
                     self._newline()
 
-            self._push(indent)
+            self._indent(indent)
             self.process_node(node)
             last_node = node
 
@@ -268,16 +266,32 @@ class ThriftFormatter(object):
             self._inline_nodes(left)
         return fn
 
-    def DocumentContext(self, node: ThriftParser.DocumentContext):
-        self._block_nodes(node.children)
-        self._newline()
-
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
+        #if node.symbol.text == 'CrazyNesting':
+        #    import pdb
+        #    pdb.set_trace()
+
+        # add tail comment before new line
+        if self._newline_c > 0:
+            self._tail_comment()
+            self._push('\n'*self._newline_c)
+            self._newline_c = 0
+
+        # add line comments
         self._line_comments(node)
         if self._is_EOF(node):
             return
+
+        # add prefix
+        if self._indent_s:
+            self._push(self._indent_s)
+            self._indent_s = ''
         self._push(node.symbol.text)
+
+    def DocumentContext(self, node: ThriftParser.DocumentContext):
+        self._block_nodes(node.children)
+        self._newline()
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
