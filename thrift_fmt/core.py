@@ -51,6 +51,12 @@ class ThriftFormatter(object):
         self.process_node(self._document)
 
     def _push(self, text: str):
+        if self._newline_c > 0:
+            self._out.write('\n'*self._newline_c)
+            self._newline_c = 0
+        self._out.write(text)
+
+    def _append(self, text: str):
         self._out.write(text)
 
     def _newline(self, repeat: int = 1):
@@ -157,7 +163,10 @@ class ThriftFormatter(object):
                 comments.append(token)
 
         for i, token in enumerate(comments):
-            self._push(token.text.strip())  # TODO: support indent
+            if self._indent_s:
+                self._push(self._indent_s)
+            self._push(token.text.strip())
+
             if token.type == ThriftParser.ML_COMMENT and not self._is_EOF(node):
                 self._newline(2)
             else:
@@ -179,8 +188,9 @@ class ThriftFormatter(object):
 
         assert len(comments) <= 1
         if comments:
-            self._push(' ')
-            self._push(comments[0].text.strip())
+            self._append(' ')
+            self._append(comments[0].text.strip())
+            self._push('')
             self._last_token_index = comments[0].tokenIndex
 
     def process_node(self, node: ParseTree):
@@ -268,25 +278,23 @@ class ThriftFormatter(object):
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
-        #if node.symbol.text == 'CrazyNesting':
-        #    import pdb
-        #    pdb.set_trace()
 
         # add tail comment before new line
         if self._newline_c > 0:
             self._tail_comment()
-            self._push('\n'*self._newline_c)
-            self._newline_c = 0
 
         # add line comments
         self._line_comments(node)
+
         if self._is_EOF(node):
             return
 
-        # add prefix
+        # add indent
         if self._indent_s:
             self._push(self._indent_s)
             self._indent_s = ''
+
+        # add token
         self._push(node.symbol.text)
 
     def DocumentContext(self, node: ThriftParser.DocumentContext):
