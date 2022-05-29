@@ -92,6 +92,7 @@ class ThriftFormatter(object):
         fake_token.type = 21
         fake_token.text = 'required'
         fake_token.is_fake = True
+        fake_token.line = child.symbol.line
         fake_node = TerminalNodeImpl(fake_token)
         fake_req = ThriftParser.Field_reqContext(parser=node.parser)
         fake_req.children = [fake_node]
@@ -115,6 +116,7 @@ class ThriftFormatter(object):
         fake_token = CommonToken()
         fake_token.text = ','
         fake_token.is_fake = True
+        fake_token.line = tail.symbol.line
         fake_node = TerminalNodeImpl(fake_token)
         fake_ctx = ThriftParser.List_separatorContext(parser=node.parser)
         fake_ctx.children = [fake_node]
