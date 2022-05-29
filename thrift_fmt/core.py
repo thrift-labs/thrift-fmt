@@ -1,5 +1,7 @@
+from ast import Call
+from sys import stdin
 import typing
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Tuple
 
 from antlr4.InputStream import InputStream
 from antlr4.FileStream import FileStream
@@ -36,8 +38,7 @@ class ThriftFormatter(object):
     def __init__(self, data: ThriftData):
         self._data = data
         self._document = data.document
-        self._out = None
-        self._newline_c = 0
+        self._newline_c: int = 0
         self._last_token_index = -1
 
     def format(self, out: typing.TextIO):
@@ -176,8 +177,9 @@ class ThriftFormatter(object):
         fn(node)
 
     @staticmethod
-    def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParserRuleContext]):
-        children = []
+    def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParserRuleContext]) \
+            -> Tuple[List[ParseTree], List[ParseTree]]:
+        children:  List[ParseTree] = []
         for i, child in enumerate(nodes):
             if not isinstance(child, cls):
                 return children, nodes[i:]
@@ -228,9 +230,10 @@ class ThriftFormatter(object):
                 self._push(join)
             self.process_node(node)
 
+    @staticmethod
     def _gen_inline_Context(
             join: str = ' ',
-            tight_fn: Optional[Callable[[ParseTree], None]] = None):
+            tight_fn: Optional[Callable[[int, ParseTree], bool]] = None):
         def fn(self, node: ParseTree):
             for i, child in enumerate(node.children):
                 if i > 0 and len(join) > 0:
@@ -239,7 +242,8 @@ class ThriftFormatter(object):
                 self.process_node(child)
         return fn
 
-    def _gen_subfields_Context(_, start: int, field_class: typing.Type):
+    @staticmethod
+    def _gen_subfields_Context(start: int, field_class: typing.Type):
         def fn(self, node: ParseTree):
             self._inline_nodes(node.children[:start])
             self._newline()
@@ -294,10 +298,10 @@ class ThriftFormatter(object):
         tight_fn=lambda i, n: not ThriftFormatter._is_token(n.parent.children[i-1], ','))
     Const_listContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
-    Enum_ruleContext = _gen_subfields_Context(None, 3, ThriftParser.Enum_fieldContext)
-    Struct_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
-    Union_Context = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
-    ExceptionContext = _gen_subfields_Context(None, 3, ThriftParser.FieldContext)
+    Enum_ruleContext = _gen_subfields_Context(3, ThriftParser.Enum_fieldContext)
+    Struct_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
+    Union_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
+    ExceptionContext = _gen_subfields_Context(3, ThriftParser.FieldContext)
     FieldContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Function_Context = _gen_inline_Context(
