@@ -61,7 +61,7 @@ class ThriftFormatter(object):
         self._newline_c += diff
 
     def _newline(self, repeat: int = 1):
-        self._check_tail_comment()
+        self._tail_comment()
         self.__newline(repeat)
 
     def patch(self):
@@ -96,7 +96,6 @@ class ThriftFormatter(object):
         fake_token.type = 21
         fake_token.text = 'required'
         fake_token.is_fake = True
-        fake_token.line = child.symbol.line
         fake_node = TerminalNodeImpl(fake_token)
         fake_req = ThriftParser.Field_reqContext(parser=node.parser)
         fake_req.children = [fake_node]
@@ -120,7 +119,6 @@ class ThriftFormatter(object):
         fake_token = CommonToken()
         fake_token.text = ','
         fake_token.is_fake = True
-        fake_token.line = tail.symbol.line
         fake_node = TerminalNodeImpl(fake_token)
         fake_ctx = ThriftParser.List_separatorContext(parser=node.parser)
         fake_ctx.children = [fake_node]
@@ -148,12 +146,13 @@ class ThriftFormatter(object):
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
-    def _check_comments(self, node: TerminalNodeImpl):
+    def _line_comments(self, node: TerminalNodeImpl):
         if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
             return
+
         token_index = node.symbol.tokenIndex
         comments = []
-        for token in self._data._tokens:
+        for token in self._data._tokens[self._last_token_index + 1:]:
             if token.channel != 2:
                 continue
             if self._last_token_index < token.tokenIndex < token_index:
@@ -167,7 +166,7 @@ class ThriftFormatter(object):
                 self.__newline()
         self._last_token_index = node.symbol.tokenIndex
 
-    def _check_tail_comment(self):
+    def _tail_comment(self):
         if self._last_token_index == -1:
             return
 
@@ -275,7 +274,7 @@ class ThriftFormatter(object):
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
-        self._check_comments(node)
+        self._line_comments(node)
         if self._is_EOF(node):
             return
         self._push(node.symbol.text)
