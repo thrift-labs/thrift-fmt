@@ -145,7 +145,7 @@ class ThriftFormatter(object):
             node.children.pop()
 
     def _check_comment(self, node: TerminalNodeImpl):
-        if hasattr(node, 'is_fake') and node.is_fake:
+        if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
             return
         token_index = node.symbol.tokenIndex
         comments = []
