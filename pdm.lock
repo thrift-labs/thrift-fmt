@@ -124,7 +124,7 @@ dependencies = [
 
 [[package]]
 name = "thrift-parser"
-version = "0.0.1"
+version = "0.0.2"
 requires_python = ">=3.7"
 summary = "a thrift parser (antlr4)"
 dependencies = [
@@ -151,7 +151,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "3.1"
-content_hash = "sha256:f52dc2dd054216dda9475b2be14ec25ae5ea91680706293af7505b3afd0590cc"
+content_hash = "sha256:621343fcd7ff08514de0f0fbc94e5236fa9f04fae6d028e38cd11c8a82645748"
 
 [metadata.files]
 "antlr4-python3-runtime 4.10" = [
@@ -217,9 +217,9 @@ content_hash = "sha256:f52dc2dd054216dda9475b2be14ec25ae5ea91680706293af7505b3af
     {file = "pytest-7.1.2-py3-none-any.whl", hash = "sha256:13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c"},
     {file = "pytest-7.1.2.tar.gz", hash = "sha256:a06a0425453864a270bc45e71f783330a7428defb4230fb5e6a731fde06ecd45"},
 ]
-"thrift-parser 0.0.1" = [
-    {file = "thrift_parser-0.0.1-py3-none-any.whl", hash = "sha256:04f7c03631fba5e344cceb6c2c23d21dc87334a1605640e014455bf2707be27a"},
-    {file = "thrift-parser-0.0.1.tar.gz", hash = "sha256:47bcaf4c6300b5be90190501d156aa1da5204424655e9410e184cea9c3d6274e"},
+"thrift-parser 0.0.2" = [
+    {file = "thrift_parser-0.0.2-py3-none-any.whl", hash = "sha256:1d37e977d57135df0081ecc8b0577ca8077a508154ac6049fb718757744a5e8e"},
+    {file = "thrift-parser-0.0.2.tar.gz", hash = "sha256:2fc9c8f4d49053cf2993901053abe52d692a384c64d16dda8ac18bd520b20d71"},
 ]
 "tomli 2.0.1" = [
     {file = "tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},

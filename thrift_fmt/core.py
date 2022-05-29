@@ -2,35 +2,13 @@ from __future__ import annotations
 import typing
 from typing import List, Optional, Callable, Tuple
 
-from antlr4.InputStream import InputStream
-from antlr4.FileStream import FileStream
-from antlr4.StdinStream import StdinStream
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 from antlr4.tree.Tree import ParseTree
-from antlr4 import ParserRuleContext
 
 
-from thrift_parser import parse
+from thrift_parser import ThriftData
 from thrift_parser.ThriftParser import ThriftParser
-
-
-class ThriftData(object):
-
-    def __init__(self, input_stream: InputStream):
-        _, tokens, _, document = parse(input_stream)
-        self._tokens: List[CommonToken] = tokens.tokens
-        self.document: ThriftParser.DocumentContext = document
-
-    @classmethod
-    def from_file(cls, file: str) -> ThriftData:
-        input_stream = FileStream(file, encoding='utf8')
-        return cls(input_stream)
-
-    @classmethod
-    def from_stdin(cls) -> ThriftData:
-        input_stream = StdinStream(encoding='utf8')
-        return cls(input_stream)
 
 
 class ThriftFormatter(object):
@@ -156,7 +134,7 @@ class ThriftFormatter(object):
 
         token_index = node.symbol.tokenIndex
         comments = []
-        for token in self._data._tokens[self._last_token_index + 1:]:
+        for token in self._data.tokens[self._last_token_index + 1:]:
             if token.channel != 2:
                 continue
             if self._last_token_index < token.tokenIndex < token_index:
@@ -184,9 +162,9 @@ class ThriftFormatter(object):
         if self._last_token_index == -1:
             return
 
-        last_token = self._data._tokens[self._last_token_index]
+        last_token = self._data.tokens[self._last_token_index]
         comments = []
-        for token in self._data._tokens[self._last_token_index + 1:]:
+        for token in self._data.tokens[self._last_token_index + 1:]:
             if token.line != last_token.line:
                 break
             if token.channel != 2:
@@ -211,7 +189,7 @@ class ThriftFormatter(object):
         fn(node)
 
     @staticmethod
-    def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParserRuleContext]) \
+    def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParseTree]) \
             -> Tuple[List[ParseTree], List[ParseTree]]:
         children:  List[ParseTree] = []
         for i, child in enumerate(nodes):
