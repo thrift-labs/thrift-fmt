@@ -132,6 +132,7 @@ class ThriftFormatter(object):
         is_inline_field = isinstance(node, ThriftParser.FieldContext) and \
             isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
         is_inline_node = isinstance(node, ThriftParser.Type_annotationContext)
+
         if is_inline_field or is_inline_node:
             self._remove_last_list_separator(node)
 
