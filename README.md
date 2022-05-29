@@ -3,28 +3,27 @@ thrift formatter
 
 ## Usage
 
-install
+### install
 
-```
+```bash
 pip install thrift-fmt
 ```
 
-```
+### run
+
+```bash
 thrift-fmt xx.thrift
+
+thrift-fmt xx.thrift xx.out.thrift
 ```
 
 parser https://github.com/alingse/thrift-parser
 
 ## TODO
 
-[x] 1. 单文件解析
-[x] 2. 定义格式 空格/换行/注释
-[x] 3. 支持 include?
-[x] 4. 封装成 python package
-5. struct 依赖排序(生成 python 代码会有依赖问题)
-[x] 6. 补充 optional/required
-[x] 7. 校正类型
-8. 兼容注释
+1. 支持控制 patch 与否
+2. 支持 -w 回写
+3. 支持目录
 
 ## LICENSE
 
