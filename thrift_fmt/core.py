@@ -249,6 +249,7 @@ class ThriftFormatter(object):
             self._inline_nodes(node.children[:start])
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
+            # TODO: clac fields tail
             self._block_nodes(fields, indent=' '*4)
             self._newline()
             self._inline_nodes(left)
