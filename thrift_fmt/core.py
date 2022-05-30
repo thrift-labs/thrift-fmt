@@ -235,7 +235,7 @@ class ThriftFormatter(object):
     def _gen_inline_Context(
             join: str = ' ',
             tight_fn: Optional[Callable[[int, ParseTree], bool]] = None):
-        def fn(self, node: ParseTree):
+        def fn(self: ThriftFormatter, node: ParseTree):
             for i, child in enumerate(node.children):
                 if i > 0 and len(join) > 0:
                     if not tight_fn or not tight_fn(i, child):
