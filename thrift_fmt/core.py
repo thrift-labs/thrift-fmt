@@ -42,17 +42,18 @@ class ThriftFormatter(object):
             return
         self._newline_c += diff
 
-    def _indent(self, indent=''):
+    def _indent(self, indent: str = ''):
         self._indent_s = indent
 
     def patch(self):
-        self._walk(self._patch_field_req)
-        self._walk(self._patch_field_list_separator)
-        self._walk(self._patch_remove_last_list_separator)
-
-    def _walk(self, fn: Callable[[ParseTree], None]):
         self._document.parent = None
-        nodes = [self._document]
+        self._walk(self._document, self._patch_field_req)
+        self._walk(self._document, self._patch_field_list_separator)
+        self._walk(self._document, self._patch_remove_last_list_separator)
+
+    @staticmethod
+    def _walk(root: ParseTree, fn: Callable[[ParseTree], None]):
+        nodes = [root]
         while nodes:
             node = nodes.pop(0)
             fn(node)
