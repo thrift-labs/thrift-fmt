@@ -286,7 +286,7 @@ class ThriftFormatter(object):
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
-    Enum_fieldContext = _gen_inline_Context(join='')
+    Enum_fieldContext = _gen_inline_Context()
     Field_ruleContext = _gen_inline_Context(join='')
     Type_ruleContext = _gen_inline_Context(join='')
     Type_annotationContext = _gen_inline_Context(join='')
