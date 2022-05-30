@@ -245,7 +245,7 @@ class ThriftFormatter(object):
 
     @staticmethod
     def _gen_subfields_Context(start: int, field_class: typing.Type):
-        def fn(self, node: ParseTree):
+        def fn(self: ThriftFormatter, node: ParseTree):
             self._inline_nodes(node.children[:start])
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
