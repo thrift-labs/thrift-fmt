@@ -61,7 +61,8 @@ class ThriftFormatter(object):
                     child.parent = node
                     nodes.append(child)
 
-    def _patch_field_req(self, node: ParseTree):
+    @staticmethod
+    def _patch_field_req(node: ParseTree):
         if not isinstance(node, ThriftParser.FieldContext):
             return
         if isinstance(node.parent, ThriftParser.Function_Context):
@@ -83,7 +84,8 @@ class ThriftFormatter(object):
         # patch
         node.children.insert(i, fake_req)
 
-    def _patch_field_list_separator(self, node: ParseTree):
+    @staticmethod
+    def _patch_field_list_separator(node: ParseTree):
         classes = (
             ThriftParser.Enum_fieldContext,
             ThriftParser.FieldContext,
@@ -113,7 +115,8 @@ class ThriftFormatter(object):
         if is_inline_field or is_inline_node:
             self._remove_last_list_separator(node)
 
-    def _remove_last_list_separator(self, node: ParseTree):
+    @staticmethod
+    def _remove_last_list_separator(node: ParseTree):
         if not node.parent:
             return
 
@@ -177,16 +180,6 @@ class ThriftFormatter(object):
             self._append(comments[0].text.strip())
             self._push('')
             self._last_token_index = comments[0].tokenIndex
-
-    def process_node(self, node: ParseTree):
-        if not isinstance(node, TerminalNodeImpl):
-            for child in node.children:
-                child.parent = node
-
-        method_name = node.__class__.__name__.split('.')[-1]
-        fn = getattr(self, method_name, None)
-        assert fn
-        fn(node)
 
     @staticmethod
     def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParseTree]) \
@@ -260,6 +253,16 @@ class ThriftFormatter(object):
             self._newline()
             self._inline_nodes(left)
         return fn
+
+    def process_node(self, node: ParseTree):
+        if not isinstance(node, TerminalNodeImpl):
+            for child in node.children:
+                child.parent = node
+
+        method_name = node.__class__.__name__.split('.')[-1]
+        fn = getattr(self, method_name, None)
+        assert fn
+        fn(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
