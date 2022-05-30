@@ -1,20 +1,23 @@
-import io
 import click
+import glob
+import pathlib
 import sys
 
 from .core import ThriftData, ThriftFormatter
 
 
 @click.command()
-@click.argument('fin', type=click.Path(exists=True, file_okay=True))
-@click.argument('fout', type=click.Path(file_okay=True, writable=True), required=False)
-def main(fout=None, fin=None):
-    data = ThriftData.from_file(fin)
-    fmt = ThriftFormatter(data)
-    fmt.patch()
-
-    if fout is None:
+@click.argument('input', type=click.Path(exists=True, file_okay=True, dir_okay=True))
+def main(input=None):
+    fin = pathlib.Path(input)
+    if fin.is_file():
+        data = ThriftData.from_file(fin)
+        fmt = ThriftFormatter(data)
+        fmt.patch()
         fmt.format(sys.stdout)
     else:
-        with io.open(fout, 'w', encoding='utf8') as f:
-            fmt.format(f)
+        for file in fin.glob('*.thrift'):
+            data = ThriftData.from_file(file)
+            fmt = ThriftFormatter(data)
+            fmt.patch()
+            fmt.format(sys.stdout)
