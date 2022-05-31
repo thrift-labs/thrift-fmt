@@ -16,24 +16,26 @@ from .core import ThriftData, ThriftFormatter
 @click.argument('file',
     type=click.Path(exists=True, file_okay=True, dir_okay=False), required=False)
 def main(dir, write, no_patch, file):
-    patch = not no_patch
     if not dir and not file:
         click.Abort()
+
     if file:
+        files = [file]
+    else:
+        files = pathlib.Path(dir).glob('*.thrift')
+        write = True
+
+    patch = not no_patch
+    for file in files:
         data = ThriftData.from_file(file)
         fmt = ThriftFormatter(data)
         if patch:
             fmt.patch()
+        out = io.StringIO()
+        fmt.format(out)
+
         if write:
             with io.open(file, 'w') as f:
-                fmt.format(f)
+                f.write(out.getvalue())
         else:
-            fmt.format(sys.stdout)
-    else:
-        for file in pathlib.Path(dir).glob('*.thrift'):
-            data = ThriftData.from_file(file)
-            fmt = ThriftFormatter(data)
-            if patch:
-                fmt.patch()
-            with io.open(file, 'w') as f:
-                fmt.format(f)
+            print(out.getvalue())

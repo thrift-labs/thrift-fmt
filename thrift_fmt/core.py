@@ -5,6 +5,7 @@ from typing import List, Optional, Callable, Tuple
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 from antlr4.tree.Tree import ParseTree
+from attr import field
 
 
 from thrift_parser import ThriftData
@@ -245,7 +246,18 @@ class ThriftFormatter(object):
         return fn
 
     def _calc_field_padding(self, fields: List[ParseTree]):
-        pass
+        stats = []
+        for i, field in enumerate(fields):
+            stats.append([0, 0])
+            def check_field(node: ParseTree):
+                if not isinstance(node, TerminalNodeImpl):
+                    return
+                stats[i][0] += 1
+                stats[i][1] += len(node.symbol.text)
+            self._walk(field, check_field)
+        #print(stats)
+        #import pdb
+        #pdb.set_trace()
 
     @staticmethod
     def _gen_subfields_Context(start: int, field_class: typing.Type):
