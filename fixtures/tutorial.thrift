@@ -78,8 +78,8 @@ enum Operation {
  */
 struct Work {
   1: i32 num1 = 0,
-  2: i32 num2,
-  3: Operation op,
+  2: i32 num2, // num2 for
+  3: Operation op, // op is Operation
   4: optional string comment,
 }
 

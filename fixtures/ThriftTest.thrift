@@ -88,7 +88,7 @@ struct Xtruct2
 {
   1: i8     byte_thing,  // used to be byte, hence the name
   2: Xtruct struct_thing,
-  3: i32    i32_thing
+  3: i32    i32_thing // a
 }
 
 struct Xtruct3
