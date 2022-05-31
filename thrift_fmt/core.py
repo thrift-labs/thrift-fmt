@@ -19,6 +19,8 @@ class ThriftFormatter(object):
         self._newline_c: int = 0
         self._indent_s: str = ''
         self._last_token_index: int = -1
+        self._last_line_length: int = 0
+        self._field_padding: int = 0
 
     def format(self, out: typing.TextIO):
         self._out = out
@@ -32,7 +34,9 @@ class ThriftFormatter(object):
         if self._newline_c > 0:
             self._out.write('\n'*self._newline_c)
             self._newline_c = 0
+            self._last_line_length = 0
         self._out.write(text)
+        self._last_line_length += len(text)
 
     def _append(self, text: str):
         self._out.write(text)
@@ -178,6 +182,10 @@ class ThriftFormatter(object):
 
         assert len(comments) <= 1
         if comments:
+            if self._field_padding > 0:
+                #import pdb
+                #pdb.set_trace()
+                pass
             self._append(' ')
             self._append(comments[0].text.strip())
             self._push('')
@@ -246,18 +254,19 @@ class ThriftFormatter(object):
         return fn
 
     def _calc_field_padding(self, fields: List[ParseTree]):
-        stats = []
+        if not fields:
+            return 0
+
+        lengths = []
         for i, field in enumerate(fields):
-            stats.append([0, 0])
-            def check_field(node: ParseTree):
+            lengths.append(0)
+            def calc_field(node: ParseTree):
                 if not isinstance(node, TerminalNodeImpl):
                     return
-                stats[i][0] += 1
-                stats[i][1] += len(node.symbol.text)
-            self._walk(field, check_field)
-        #print(stats)
-        #import pdb
-        #pdb.set_trace()
+                lengths[i] += 1  # join
+                lengths[i] += len(node.symbol.text)
+            self._walk(field, calc_field)
+        return max(lengths)
 
     @staticmethod
     def _gen_subfields_Context(start: int, field_class: typing.Type):
@@ -265,8 +274,9 @@ class ThriftFormatter(object):
             self._inline_nodes(node.children[:start])
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
-            self._calc_field_padding(fields)
+            self._field_padding = self._calc_field_padding(fields)
             self._block_nodes(fields, indent=' '*4)
+            self._field_padding = 0
             self._newline()
             self._inline_nodes(left)
         return fn
