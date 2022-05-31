@@ -244,13 +244,16 @@ class ThriftFormatter(object):
                 self.process_node(child)
         return fn
 
+    def _calc_field_padding(self, fields: List[ParseTree]):
+        pass
+
     @staticmethod
     def _gen_subfields_Context(start: int, field_class: typing.Type):
         def fn(self: ThriftFormatter, node: ParseTree):
             self._inline_nodes(node.children[:start])
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
-            # TODO: clac fields tail
+            self._calc_field_padding(fields)
             self._block_nodes(fields, indent=' '*4)
             self._newline()
             self._inline_nodes(left)
@@ -291,7 +294,8 @@ class ThriftFormatter(object):
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
-    Enum_fieldContext = _gen_inline_Context()
+    Enum_fieldContext = _gen_inline_Context(join=' ',
+        tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Field_ruleContext = _gen_inline_Context(join='')
     Type_ruleContext = _gen_inline_Context(join='')
     Type_annotationContext = _gen_inline_Context(join='')
