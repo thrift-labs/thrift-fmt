@@ -31,11 +31,10 @@ def main(dir, write, no_patch, file):
         fmt = ThriftFormatter(data)
         if patch:
             fmt.patch()
-        out = io.StringIO()
-        fmt.format(out)
+        output = fmt.format()
 
         if write:
             with io.open(file, 'w') as f:
-                f.write(out.getvalue())
+                f.write(output)
         else:
-            print(out.getvalue())
+            print(output)

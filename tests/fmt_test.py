@@ -1,4 +1,3 @@
-import io
 import os
 import glob
 
@@ -13,10 +12,7 @@ def run_fmt(file, patch=True):
     fmt = ThriftFormatter(data)
     if patch:
         fmt.patch()
-
-    out = io.StringIO()
-    fmt.format(out)
-    return out.getvalue()
+    return fmt.format()
 
 
 def test_simple():

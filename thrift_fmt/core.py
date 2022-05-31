@@ -1,4 +1,5 @@
 from __future__ import annotations
+import io
 import typing
 from typing import List, Optional, Callable, Tuple
 
@@ -22,13 +23,14 @@ class ThriftFormatter(object):
         self._last_line_length: int = 0
         self._field_padding: int = 0
 
-    def format(self, out: typing.TextIO):
-        self._out = out
+    def format(self) -> str:
+        self._out: typing.TextIO = io.StringIO()
         self._newline_c = 0
         self._indent_s = ''
         self._last_token_index = -1
 
         self.process_node(self._document)
+        return self._out.getvalue()
 
     def _push(self, text: str):
         if self._newline_c > 0:
