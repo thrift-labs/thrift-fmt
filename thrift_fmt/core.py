@@ -16,10 +16,14 @@ class ThriftFormatter(object):
     def __init__(self, data: ThriftData):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
+        self._option_comment = True
         self._newline_c: int = 0
         self._indent_s: str = ''
         self._last_token_index: int = -1
         self._field_padding: int = 0
+
+    def option(self, comment=True):
+        self._option_comment = comment
 
     def format(self) -> str:
         self._out: io.StringIO = io.StringIO()
@@ -136,6 +140,9 @@ class ThriftFormatter(object):
             node.children.pop()
 
     def _line_comments(self, node: TerminalNodeImpl):
+        if not self._option_comment:
+            return
+
         if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
             return
 
@@ -166,6 +173,9 @@ class ThriftFormatter(object):
         self._last_token_index = node.symbol.tokenIndex
 
     def _tail_comment(self):
+        if not self._option_comment:
+            return
+
         if self._last_token_index == -1:
             return
 
