@@ -11,8 +11,9 @@ from .core import ThriftData, ThriftFormatter
     type=click.Path(exists=True, file_okay=False, dir_okay=True),)
 @click.option('-w', '--write', is_flag=True,
     help='Write to file instead of stdout, default true when dir was set')
-@click.option('-i', '--indent', type=click.IntRange(min=0), default=4,
-    help='struct/enum/service sub fields indent, default 4')
+@click.option('-i', '--indent', type=click.IntRange(min=0), default=None,
+    help='struct/enum/service sub fields indent, default {}'.format(
+        ThriftFormatter.DEFAULT_INDENT))
 @click.option('--no-patch', is_flag=True,
     help='not patch thrift file')
 @click.option('--remove-comment', is_flag=True, default=False,

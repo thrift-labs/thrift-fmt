@@ -13,7 +13,11 @@ from thrift_parser.ThriftParser import ThriftParser
 
 
 class PureThriftFormatter(object):
+    DEFAULT_INDENT: int = 4
+
     def __init__(self):
+        self._option_indent: int = self.DEFAULT_INDENT
+
         self._newline_c: int = 0
         self._indent_s: str = ''
 
@@ -24,6 +28,10 @@ class PureThriftFormatter(object):
 
         self.process_node(node)
         return self._out.getvalue()
+
+    def option(self, indent: int):
+        if indent > 0:
+            self._option_indent = indent
 
     def _push(self, text: str):
         if self._newline_c > 0:
@@ -241,7 +249,6 @@ class ThriftFormatter(PureThriftFormatter):
 
         self._option_comment: bool = True
         self._option_patch: bool = True
-        self._option_indent: int = 4
 
         self._field_padding: int = 0
         self._last_token_index: int = -1
