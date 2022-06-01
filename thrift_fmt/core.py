@@ -117,22 +117,6 @@ class PureThriftFormatter(object):
                 self.process_node(child)
         return fn
 
-    def _calc_field_padding(self, fields: List[ParseTree]):
-        if not fields:
-            return 0
-
-        lengths = []
-        # TODO: calc real field padding
-        for i, field in enumerate(fields):
-            lengths.append(0)
-            def calc_field(node: ParseTree):
-                if not isinstance(node, TerminalNodeImpl):
-                    return
-                lengths[i] += 1  # join
-                lengths[i] += len(node.symbol.text)
-            self.walk_node(field, calc_field)
-        return max(lengths)
-
     def before_subfields(self, _: List[ParseTree]):
         pass
 
@@ -351,6 +335,22 @@ class ThriftFormatter(PureThriftFormatter):
 
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
+
+    def _calc_field_padding(self, fields: List[ParseTree]):
+        if not fields:
+            return 0
+
+        lengths = []
+        # TODO: calc real field padding
+        for i, field in enumerate(fields):
+            lengths.append(0)
+            def calc_field(node: ParseTree):
+                if not isinstance(node, TerminalNodeImpl):
+                    return
+                lengths[i] += 1  # join
+                lengths[i] += len(node.symbol.text)
+            self.walk_node(field, calc_field)
+        return max(lengths)
 
     def before_subfields(self, fields: List[ParseTree]):
         self._field_padding = self._calc_field_padding(fields)
