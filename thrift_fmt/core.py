@@ -1,5 +1,6 @@
 from __future__ import annotations
 import io
+from turtle import RawTurtle
 import typing
 from typing import List, Optional, Callable, Tuple
 
@@ -90,6 +91,9 @@ class PureThriftFormatter(object):
             ThriftParser.ServiceContext,
         ))
 
+    def after_block_node_hook(self, _: ParseTree):
+        pass
+
     def _block_nodes(self, nodes: List[ParseTree], indent: str = ''):
         last_node = None
         for i, node in enumerate(nodes):
@@ -104,7 +108,7 @@ class PureThriftFormatter(object):
 
             self._indent(indent)
             self.process_node(node)
-            self._tail_comment()
+            self.after_block_node_hook(node)
             last_node = node
 
     def _inline_nodes(self, nodes: List[ParseTree], join: str = ' '):
@@ -170,6 +174,12 @@ class PureThriftFormatter(object):
 
     def DocumentContext(self, node: ThriftParser.DocumentContext):
         self._block_nodes(node.children)
+
+    def HeaderContext(self, node: ThriftParser.HeaderContext):
+        self.process_node(node.children[0])
+
+    def DefinitionContext(self, node: ThriftParser.DefinitionContext):
+        self.process_node(node.children[0])
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
@@ -365,6 +375,9 @@ class ThriftFormatter(PureThriftFormatter):
 
     def after_subfields_hook(self, _: List[ParseTree]):
         self._field_padding = 0
+
+    def after_block_node_hook(self, _: ParseTree):
+        self._tail_comment()
 
     def _line_comments(self, node: TerminalNodeImpl):
         if not self._option_comment:

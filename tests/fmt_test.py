@@ -2,7 +2,7 @@ from importlib.resources import path
 import os
 import glob
 
-from thrift_fmt.core import ThriftData, ThriftFormatter
+from thrift_fmt.core import ThriftData, PureThriftFormatter, ThriftFormatter
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -45,3 +45,23 @@ def test_all():
         file = file.split('/')[-1]
         run_fmt(file)
         run_fmt(file, patch=False)
+
+def test_only_part():
+    file = 'simple.thrift'
+    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
+    data = ThriftData.from_file(fin)
+
+    parts = []
+    for node in data.document.children:
+        out = PureThriftFormatter().format_node(node)
+        parts.append(out)
+        print(out)
+
+    assert parts[0] == 'include "shared.thrift"'
+    assert parts[1] == 'include "shared2.thrift"'
+    assert parts[2] == '''struct Xtruct2 {
+    1: required i8 byte_thing,
+    2: required Xtruct struct_thing,
+    3: required i32 i32_thing,
+}'''
+
