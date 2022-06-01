@@ -38,12 +38,15 @@ class ThriftFormatter(object):
         if self._option_patch:
             self.patch()
 
+        return self._format_node(self._document)
+
+    def _format_node(self, node: ParseTree):
         self._out: io.StringIO = io.StringIO()
         self._newline_c = 0
         self._indent_s = ''
         self._last_token_index = -1
 
-        self.process_node(self._document)
+        self.process_node(node)
         return self._out.getvalue()
 
     def _push(self, text: str):
