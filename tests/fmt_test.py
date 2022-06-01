@@ -55,7 +55,6 @@ def test_only_part():
     for node in data.document.children:
         out = PureThriftFormatter().format_node(node)
         parts.append(out)
-        print(out)
 
     assert parts[0] == 'include "shared.thrift"'
     assert parts[1] == 'include "shared2.thrift"'
@@ -65,3 +64,19 @@ def test_only_part():
     3: required i32 i32_thing,
 }'''
 
+def test_all_part():
+    file = 'simple.thrift'
+    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
+    data = ThriftData.from_file(fin)
+
+    # test walk
+    all_outs = []
+    def run_each(node):
+        out = PureThriftFormatter().format_node(node)
+        all_outs.append(out)
+
+    PureThriftFormatter.walk_node(data.document, run_each)
+    for i, out in enumerate(all_outs):
+        print(i, out)
+
+    assert len(all_outs) == 149
