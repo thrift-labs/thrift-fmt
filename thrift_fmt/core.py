@@ -1,6 +1,5 @@
 from __future__ import annotations
 import io
-from turtle import RawTurtle
 import typing
 from typing import List, Optional, Callable, Tuple
 
@@ -353,24 +352,19 @@ class ThriftFormatter(PureThriftFormatter):
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
-    def _calc_field_padding(self, fields: List[ParseTree]):
+    def _calc_subfields_padding(self, fields: List[ParseTree]):
         if not fields:
             return 0
 
-        lengths = []
-        # TODO: calc real field padding
+        padding = 0
         for i, field in enumerate(fields):
-            lengths.append(0)
-            def calc_field(node: ParseTree):
-                if not isinstance(node, TerminalNodeImpl):
-                    return
-                lengths[i] += 1  # join
-                lengths[i] += len(node.symbol.text)
-            self.walk_node(field, calc_field)
-        return max(lengths)
+            out = PureThriftFormatter().format_node(field)
+            if len(out) > padding:
+                padding = len(out)
+        return padding
 
     def before_subfields_hook(self, fields: List[ParseTree]):
-        self._field_padding = self._calc_field_padding(fields)
+        self._field_padding = self._calc_subfields_padding(fields)
         self._field_padding += self._option_indent
 
     def after_subfields_hook(self, _: List[ParseTree]):
