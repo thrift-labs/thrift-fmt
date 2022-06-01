@@ -21,7 +21,7 @@ from .core import ThriftData, ThriftFormatter
     type=click.Path(exists=True, file_okay=True, dir_okay=False), required=False)
 def main(dir, write, indent, no_patch, remove_comment, file):
     if not dir and not file:
-        click.Abort()
+        raise click.ClickException('thrift file or dir is required')
 
     if file:
         files = [file]
