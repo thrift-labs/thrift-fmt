@@ -16,14 +16,12 @@ class PureThriftFormatter(object):
     def __init__(self):
         self._newline_c: int = 0
         self._indent_s: str = ''
-        self._last_token_index: int = -1
         self._field_padding: int = 0
 
     def format_node(self, node: ParseTree):
         self._out: io.StringIO = io.StringIO()
         self._newline_c = 0
         self._indent_s = ''
-        self._last_token_index = -1
 
         self.process_node(node)
         return self._out.getvalue()
@@ -47,7 +45,7 @@ class PureThriftFormatter(object):
         self._indent_s = indent
 
     @staticmethod
-    def _walk(root: ParseTree, fn: Callable[[ParseTree], None]):
+    def walk_node(root: ParseTree, fn: Callable[[ParseTree], None]):
         nodes = [root]
         while nodes:
             node = nodes.pop(0)
@@ -133,7 +131,7 @@ class PureThriftFormatter(object):
                     return
                 lengths[i] += 1  # join
                 lengths[i] += len(node.symbol.text)
-            self._walk(field, calc_field)
+            self.walk_node(field, calc_field)
         return max(lengths)
 
     @staticmethod
@@ -255,6 +253,8 @@ class ThriftFormatter(PureThriftFormatter):
         self._option_patch: bool = True
         self._option_indent: int = 4
 
+        self._last_token_index: int = -1
+
     def option(self, comment: Optional[bool]=None, patch: Optional[bool]=None, indent:Optional[int]=None):
         if comment is not None:
             self._option_comment = comment
@@ -271,9 +271,9 @@ class ThriftFormatter(PureThriftFormatter):
 
     def patch(self):
         self._document.parent = None
-        self._walk(self._document, self._patch_field_req)
-        self._walk(self._document, self._patch_field_list_separator)
-        self._walk(self._document, self._patch_remove_last_list_separator)
+        self.walk_node(self._document, self._patch_field_req)
+        self.walk_node(self._document, self._patch_field_list_separator)
+        self.walk_node(self._document, self._patch_remove_last_list_separator)
 
     @staticmethod
     def _patch_field_req(node: ParseTree):
