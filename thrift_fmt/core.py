@@ -133,12 +133,11 @@ class PureThriftFormatter(object):
             self.walk_node(field, calc_field)
         return max(lengths)
 
-    def before_subfields(self, fields: List[ParseTree]):
-        self._field_padding = self._calc_field_padding(fields)
-        self._field_padding += self._option_indent
+    def before_subfields(self, _: List[ParseTree]):
+        pass
 
     def after_subfields(self, _: List[ParseTree]):
-        self._field_padding = 0
+        pass
 
     @staticmethod
     def _gen_subfields_Context(start: int, field_class: typing.Type):
@@ -352,6 +351,13 @@ class ThriftFormatter(PureThriftFormatter):
 
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
+
+    def before_subfields(self, fields: List[ParseTree]):
+        self._field_padding = self._calc_field_padding(fields)
+        self._field_padding += self._option_indent
+
+    def after_subfields(self, _: List[ParseTree]):
+        self._field_padding = 0
 
     def _line_comments(self, node: TerminalNodeImpl):
         if not self._option_comment:
