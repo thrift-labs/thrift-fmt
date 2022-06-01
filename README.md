@@ -1,6 +1,8 @@
 # thrift-fmt
 thrift formatter
 
+the parser is https://github.com/alingse/thrift-parser
+
 # Usage
 
 ### install
@@ -10,19 +12,27 @@ pip install thrift-fmt
 ```
 ### run
 
+single file
+
 ```bash
 thrift-fmt mythrift.thrift
-
-thrift-fmt mythrift.thrift -w
-
-thrift-fmt -d ./thrift_files -w
-
-thrift-fmt -d ./thrift_files -w --no-patch --remove-comment
-
-thrift-fmt --help
 ```
 
-parser https://github.com/alingse/thrift-parser
+```bash
+thrift-fmt mythrift.thrift -w
+```
+
+or directory (this will overwrite the origin file, please keep in track)
+
+```bash
+thrift-fmt -d ./thrift_files
+```
+
+or more options see help
+
+```bash
+thrift-fmt --help
+```
 
 ## Use in Code
 
@@ -30,12 +40,37 @@ parser https://github.com/alingse/thrift-parser
 from thrift_fmt import ThriftFormatter, PureThriftFormatter
 from thrift_parser import ThriftData
 
-data = ThriftData.from_file('simple.thrift')
-# format one thrift file
-out = ThriftFormatter(data).format()
+data = '''
+include    "shared.thrift"   // a
+  // work info
+struct Work {
+  1: i32 num1 = 0,
+    2: required i32 num2, // num2 for
+    3: Operation op, // op is Operation
+    4: optional string comment,
+    5: map<string,list<string>> tags, //hello
+}
+'''
 
-# only a single node
-PureThriftFormatter().format_node(data.document.children[2])
+# thrift = ThriftData.from_file('simple.thrift')
+thrift = ThriftData.from_str(data)
+out = ThriftFormatter(thrift).format()
+assert out == '''
+include "shared.thrift" // a
+
+// work info
+struct Work {
+    1: required i32 num1 = 0,
+    2: required i32 num2,                       // num2 for
+    3: required Operation op,                   // op is Operation
+    4: optional string comment,
+    5: required map<string, list<string>> tags, //hello
+}
+'''.strip()
+
+# or only a single node
+header = PureThriftFormatter().format_node(thrift.document.children[0])
+assert header == 'include "shared.thrift"'
 ```
 
 ## LICENSE
