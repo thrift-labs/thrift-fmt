@@ -57,68 +57,6 @@ class PureThriftFormatter(object):
                     child.parent = node
                     nodes.append(child)
 
-    def _line_comments(self, node: TerminalNodeImpl):
-        if not self._option_comment:
-            return
-
-        if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
-            return
-
-        token_index = node.symbol.tokenIndex
-        comments = []
-        for token in self._data.tokens[self._last_token_index + 1:]:
-            if token.channel != 2:
-                continue
-            if self._last_token_index < token.tokenIndex < token_index:
-                comments.append(token)
-
-        for i, token in enumerate(comments):
-            if token.tokenIndex > 0 and token.type == ThriftParser.ML_COMMENT:
-                self._newline(2)
-
-            if self._indent_s:
-                self._push(self._indent_s)
-            self._push(token.text.strip())
-
-            is_tight: bool = token.type == ThriftParser.SL_COMMENT \
-                or self._is_EOF(node) \
-                or 0 < node.symbol.line - (token.text.count('\n') + token.line) <= 1
-            if is_tight:
-                self._newline()
-            else:
-                self._newline(2)
-
-        self._last_token_index = node.symbol.tokenIndex
-
-    def _tail_comment(self):
-        if not self._option_comment:
-            return
-
-        if self._last_token_index == -1:
-            return
-
-        last_token = self._data.tokens[self._last_token_index]
-        comments = []
-        for token in self._data.tokens[self._last_token_index + 1:]:
-            if token.line != last_token.line:
-                break
-            if token.channel != 2:
-                continue
-            comments.append(token)
-
-        assert len(comments) <= 1
-        if comments:
-            if self._field_padding > 0:
-                cur = len(self._out.getvalue().rsplit('\n', 1)[-1])
-                padding = self._field_padding - cur
-                if padding > 0:
-                    self._append(' ' * padding)
-
-            self._append(' ')
-            self._append(comments[0].text.strip())
-            self._push('')
-            self._last_token_index = comments[0].tokenIndex
-
     @staticmethod
     def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParseTree]) \
             -> Tuple[List[ParseTree], List[ParseTree]]:
@@ -224,14 +162,6 @@ class PureThriftFormatter(object):
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
-
-        # add tail comment before a new line
-        if self._newline_c > 0:
-            self._tail_comment()
-
-        # add abrove comments
-        self._line_comments(node)
-
         if self._is_EOF(node):
             return
 
@@ -414,3 +344,78 @@ class ThriftFormatter(PureThriftFormatter):
 
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
+
+    def _line_comments(self, node: TerminalNodeImpl):
+        if not self._option_comment:
+            return
+
+        if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
+            return
+
+        token_index = node.symbol.tokenIndex
+        comments = []
+        for token in self._data.tokens[self._last_token_index + 1:]:
+            if token.channel != 2:
+                continue
+            if self._last_token_index < token.tokenIndex < token_index:
+                comments.append(token)
+
+        for i, token in enumerate(comments):
+            if token.tokenIndex > 0 and token.type == ThriftParser.ML_COMMENT:
+                self._newline(2)
+
+            if self._indent_s:
+                self._push(self._indent_s)
+            self._push(token.text.strip())
+
+            is_tight: bool = token.type == ThriftParser.SL_COMMENT \
+                or self._is_EOF(node) \
+                or 0 < node.symbol.line - (token.text.count('\n') + token.line) <= 1
+            if is_tight:
+                self._newline()
+            else:
+                self._newline(2)
+
+        self._last_token_index = node.symbol.tokenIndex
+
+    def _tail_comment(self):
+        if not self._option_comment:
+            return
+
+        if self._last_token_index == -1:
+            return
+
+        last_token = self._data.tokens[self._last_token_index]
+        comments = []
+        for token in self._data.tokens[self._last_token_index + 1:]:
+            if token.line != last_token.line:
+                break
+            if token.channel != 2:
+                continue
+            comments.append(token)
+
+        assert len(comments) <= 1
+        if comments:
+            if self._field_padding > 0:
+                cur = len(self._out.getvalue().rsplit('\n', 1)[-1])
+                padding = self._field_padding - cur
+                if padding > 0:
+                    self._append(' ' * padding)
+
+            self._append(' ')
+            self._append(comments[0].text.strip())
+            self._push('')
+            self._last_token_index = comments[0].tokenIndex
+
+    def TerminalNodeImpl(self, node: TerminalNodeImpl):
+        assert isinstance(node, TerminalNodeImpl)
+
+        # add tail comment before a new line
+        if self._newline_c > 0:
+            self._tail_comment()
+
+        # add abrove comments
+        self._line_comments(node)
+
+        super().TerminalNodeImpl(node)
+
