@@ -16,6 +16,7 @@ class ThriftFormatter(object):
     def __init__(self, data: ThriftData):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
+
         self._option_comment: bool = True
         self._option_patch: bool = True
         self._option_indent: int = 4
@@ -25,12 +26,12 @@ class ThriftFormatter(object):
         self._last_token_index: int = -1
         self._field_padding: int = 0
 
-    def option(self, comment=None, patch=None, indent=None):
+    def option(self, comment: Optional[bool]=None, patch: Optional[bool]=None, indent:Optional[int]=None):
         if comment is not None:
             self._option_comment = comment
         if patch is not None:
             self._option_patch = patch
-        if indent is not None:
+        if indent is not None and indent > 0:
             self._option_indent = indent
 
     def format(self) -> str:
