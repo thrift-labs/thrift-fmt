@@ -3,14 +3,14 @@ thrift formatter
 
 the parser is https://github.com/alingse/thrift-parser
 
-# Usage
+## Usage
 
 ### install
 
 ```bash
 pip install thrift-fmt
 ```
-### run
+### format files
 
 single file
 
@@ -36,11 +36,15 @@ thrift-fmt --help
 
 ## Use in Code
 
+use `ThriftData` parse from file / stdin / str
+
+use `ThriftFormatter` or `PureThriftFormatter` format the data
+
 ```python
 from thrift_fmt import ThriftFormatter, PureThriftFormatter
 from thrift_parser import ThriftData
 
-data = '''
+origin = '''
 include    "shared.thrift"   // a
   // work info
 struct Work {
@@ -52,7 +56,6 @@ struct Work {
 }
 '''
 
-# thrift = ThriftData.from_file('simple.thrift')
 thrift = ThriftData.from_str(data)
 out = ThriftFormatter(thrift).format()
 assert out == '''
@@ -73,9 +76,23 @@ header = PureThriftFormatter().format_node(thrift.document.children[0])
 assert header == 'include "shared.thrift"'
 ```
 
-## LICENSE
+## Feature
 
-fixtures 中部分thrift 是来自于 https://github.com/apache/thrift/blob/master/tutorial/
-是 Apache 证书的
+1. suppoort keep the comment
+2. patch the required field
+3. align the fields comment
+4. format only single field
 
-thrift-parser 中使用的 Thrift.g4 是来自于 https://github.com/antlr/grammars-v4
+### TODO
+
+1. support function blank line count
+2. fix //a comment
+3. support Enum field
+4. better code
+5. other language ?
+
+# LICENSE
+
+some thrift files in fixtures thrift was copy from https://github.com/apache/thrift/blob/master/tutorial/ , The Apache LICENSE
+
+the Thrift.g4 in thrift-parser package was copy from https://github.com/antlr/grammars-v4
