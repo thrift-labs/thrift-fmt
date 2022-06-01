@@ -11,8 +11,7 @@ from antlr4.tree.Tree import ParseTree
 from thrift_parser import ThriftData
 from thrift_parser.ThriftParser import ThriftParser
 
-
-class ThriftFormatter(object):
+class PureThriftFormatter(object):
     def __init__(self, data: ThriftData):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
@@ -409,3 +408,6 @@ class ThriftFormatter(object):
     def SenumContext(self, node: ThriftParser.SenumContext):
         # deprecated
         pass
+
+class ThriftFormatter(PureThriftFormatter):
+    pass
