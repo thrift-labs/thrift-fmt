@@ -125,10 +125,10 @@ class PureThriftFormatter(object):
                 self.process_node(child)
         return fn
 
-    def before_subfields(self, _: List[ParseTree]):
+    def before_subfields_hook(self, _: List[ParseTree]):
         pass
 
-    def after_subfields(self, _: List[ParseTree]):
+    def after_subfields_hook(self, _: List[ParseTree]):
         pass
 
     @staticmethod
@@ -138,9 +138,9 @@ class PureThriftFormatter(object):
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
 
-            self.before_subfields(fields)
+            self.before_subfields_hook(fields)
             self._block_nodes(fields, indent=' ' * self._option_indent)
-            self.after_subfields(fields)
+            self.after_subfields_hook(fields)
 
             self._newline()
             self._inline_nodes(left)
@@ -359,11 +359,11 @@ class ThriftFormatter(PureThriftFormatter):
             self.walk_node(field, calc_field)
         return max(lengths)
 
-    def before_subfields(self, fields: List[ParseTree]):
+    def before_subfields_hook(self, fields: List[ParseTree]):
         self._field_padding = self._calc_field_padding(fields)
         self._field_padding += self._option_indent
 
-    def after_subfields(self, _: List[ParseTree]):
+    def after_subfields_hook(self, _: List[ParseTree]):
         self._field_padding = 0
 
     def _line_comments(self, node: TerminalNodeImpl):
@@ -439,4 +439,3 @@ class ThriftFormatter(PureThriftFormatter):
         self._line_comments(node)
 
         super().TerminalNodeImpl(node)
-
