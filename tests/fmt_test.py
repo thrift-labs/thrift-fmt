@@ -84,3 +84,36 @@ def test_all_part():
         print(i, out)
 
     assert len(all_outs) == 149
+
+
+def test_from_string():
+    data = '''
+    include    "shared.thrift"   // a
+    // work info
+    struct Work {
+    1: i32 num1 = 0,
+        2: required i32 num2, // num2 for
+        3: Operation op, // op is Operation
+        4: optional string comment,
+        5: map<string,list<string>> tags, //hello
+    }
+    '''
+
+    # thrift = ThriftData.from_file('simple.thrift')
+    thrift = ThriftData.from_str(data)
+    out = ThriftFormatter(thrift).format()
+    assert out == '''
+include "shared.thrift" // a
+
+// work info
+struct Work {
+    1: required i32 num1 = 0,
+    2: required i32 num2,                       // num2 for
+    3: required Operation op,                   // op is Operation
+    4: optional string comment,
+    5: required map<string, list<string>> tags, //hello
+}'''.strip()
+
+    # or only a single node
+    header = PureThriftFormatter().format_node(thrift.document.children[0])
+    assert header == 'include "shared.thrift"'
