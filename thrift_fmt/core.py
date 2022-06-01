@@ -29,7 +29,7 @@ class PureThriftFormatter(object):
         self.process_node(node)
         return self._out.getvalue()
 
-    def option(self, indent: int):
+    def set_indent(self, indent: int):
         if indent > 0:
             self._option_indent = indent
 
@@ -258,8 +258,8 @@ class ThriftFormatter(PureThriftFormatter):
             self._option_comment = comment
         if patch is not None:
             self._option_patch = patch
-        if indent is not None and indent > 0:
-            self._option_indent = indent
+        if indent is not None:
+            self.set_indent(indent)
 
     def format(self) -> str:
         if self._option_patch:
