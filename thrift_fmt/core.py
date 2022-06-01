@@ -6,7 +6,6 @@ from typing import List, Optional, Callable, Tuple
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 from antlr4.tree.Tree import ParseTree
-from attr import field
 
 
 from thrift_parser import ThriftData
@@ -20,11 +19,10 @@ class ThriftFormatter(object):
         self._newline_c: int = 0
         self._indent_s: str = ''
         self._last_token_index: int = -1
-        self._last_line_length: int = 0
         self._field_padding: int = 0
 
     def format(self) -> str:
-        self._out: typing.TextIO = io.StringIO()
+        self._out: io.StringIO = io.StringIO()
         self._newline_c = 0
         self._indent_s = ''
         self._last_token_index = -1
@@ -36,9 +34,7 @@ class ThriftFormatter(object):
         if self._newline_c > 0:
             self._out.write('\n'*self._newline_c)
             self._newline_c = 0
-            self._last_line_length = 0
         self._out.write(text)
-        self._last_line_length += len(text)
 
     def _append(self, text: str):
         self._out.write(text)
@@ -185,9 +181,11 @@ class ThriftFormatter(object):
         assert len(comments) <= 1
         if comments:
             if self._field_padding > 0:
-                #import pdb
-                #pdb.set_trace()
-                pass
+                cur = len(self._out.getvalue().rsplit('\n', 1)[-1])
+                padding = self._field_padding - cur
+                if padding > 0:
+                    self._append(' ' * padding)
+
             self._append(' ')
             self._append(comments[0].text.strip())
             self._push('')
@@ -235,6 +233,7 @@ class ThriftFormatter(object):
 
             self._indent(indent)
             self.process_node(node)
+            self._tail_comment()
             last_node = node
 
     def _inline_nodes(self, nodes: List[ParseTree], join: str = ' '):
@@ -260,6 +259,7 @@ class ThriftFormatter(object):
             return 0
 
         lengths = []
+        # TODO: calc real field padding
         for i, field in enumerate(fields):
             lengths.append(0)
             def calc_field(node: ParseTree):
@@ -277,6 +277,7 @@ class ThriftFormatter(object):
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
             self._field_padding = self._calc_field_padding(fields)
+            self._field_padding += 4  # indent
             self._block_nodes(fields, indent=' '*4)
             self._field_padding = 0
             self._newline()
