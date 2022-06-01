@@ -182,7 +182,8 @@ class PureThriftFormatter(object):
 
     Type_ruleContext = _gen_inline_Context(join='')
     Const_ruleContext = _gen_inline_Context(join='')
-    Enum_fieldContext = _gen_inline_Context(join=' ',
+    Enum_fieldContext = _gen_inline_Context(
+        join=' ',
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Field_ruleContext = _gen_inline_Context(join='')
     Type_ruleContext = _gen_inline_Context(join='')
@@ -262,7 +263,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._field_padding: int = 0
         self._last_token_index: int = -1
 
-    def option(self, comment: Optional[bool]=None, patch: Optional[bool]=None, indent:Optional[int]=None):
+    def option(self, comment: Optional[bool] = None, patch: Optional[bool] = None, indent: Optional[int] = None):
         if comment is not None:
             self._option_comment = comment
         if patch is not None:
