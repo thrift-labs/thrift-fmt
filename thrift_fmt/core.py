@@ -11,35 +11,15 @@ from antlr4.tree.Tree import ParseTree
 from thrift_parser import ThriftData
 from thrift_parser.ThriftParser import ThriftParser
 
+
 class PureThriftFormatter(object):
-    def __init__(self, data: ThriftData):
-        self._data: ThriftData = data
-        self._document: ThriftParser.DocumentContext = data.document
-
-        self._option_comment: bool = True
-        self._option_patch: bool = True
-        self._option_indent: int = 4
-
+    def __init__(self):
         self._newline_c: int = 0
         self._indent_s: str = ''
         self._last_token_index: int = -1
         self._field_padding: int = 0
 
-    def option(self, comment: Optional[bool]=None, patch: Optional[bool]=None, indent:Optional[int]=None):
-        if comment is not None:
-            self._option_comment = comment
-        if patch is not None:
-            self._option_patch = patch
-        if indent is not None and indent > 0:
-            self._option_indent = indent
-
-    def format(self) -> str:
-        if self._option_patch:
-            self.patch()
-
-        return self._format_node(self._document)
-
-    def _format_node(self, node: ParseTree):
+    def format_node(self, node: ParseTree):
         self._out: io.StringIO = io.StringIO()
         self._newline_c = 0
         self._indent_s = ''
@@ -66,12 +46,6 @@ class PureThriftFormatter(object):
     def _indent(self, indent: str = ''):
         self._indent_s = indent
 
-    def patch(self):
-        self._document.parent = None
-        self._walk(self._document, self._patch_field_req)
-        self._walk(self._document, self._patch_field_list_separator)
-        self._walk(self._document, self._patch_remove_last_list_separator)
-
     @staticmethod
     def _walk(root: ParseTree, fn: Callable[[ParseTree], None]):
         nodes = [root]
@@ -82,76 +56,6 @@ class PureThriftFormatter(object):
                 for child in node.children:
                     child.parent = node
                     nodes.append(child)
-
-    @staticmethod
-    def _patch_field_req(node: ParseTree):
-        if not isinstance(node, ThriftParser.FieldContext):
-            return
-        if isinstance(node.parent, ThriftParser.Function_Context):
-            return
-
-        for i, child in enumerate(node.children):
-            if isinstance(child, ThriftParser.Field_reqContext):
-                return
-            if isinstance(child, ThriftParser.Field_typeContext):
-                break
-
-        fake_token = CommonToken()
-        fake_token.type = 21
-        fake_token.text = 'required'
-        fake_token.is_fake = True
-        fake_node = TerminalNodeImpl(fake_token)
-        fake_req = ThriftParser.Field_reqContext(parser=node.parser)
-        fake_req.children = [fake_node]
-        # patch
-        node.children.insert(i, fake_req)
-
-    @staticmethod
-    def _patch_field_list_separator(node: ParseTree):
-        classes = (
-            ThriftParser.Enum_fieldContext,
-            ThriftParser.FieldContext,
-            ThriftParser.Function_Context,
-        )
-        if not isinstance(node, classes):
-            return
-
-        tail = node.children[-1]
-        if isinstance(tail, ThriftParser.List_separatorContext):
-            tail.children[0].symbol.text = ','
-            return
-
-        fake_token = CommonToken()
-        fake_token.text = ','
-        fake_token.is_fake = True
-        fake_node = TerminalNodeImpl(fake_token)
-        fake_ctx = ThriftParser.List_separatorContext(parser=node.parser)
-        fake_ctx.children = [fake_node]
-        node.children.append(fake_ctx)
-
-    def _patch_remove_last_list_separator(self, node: ParseTree):
-        is_inline_field = isinstance(node, ThriftParser.FieldContext) and \
-            isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
-        is_inline_node = isinstance(node, ThriftParser.Type_annotationContext)
-
-        if is_inline_field or is_inline_node:
-            self._remove_last_list_separator(node)
-
-    @staticmethod
-    def _remove_last_list_separator(node: ParseTree):
-        if not node.parent:
-            return
-
-        is_last = False
-        brothers = node.parent.children
-        for i, child in enumerate(brothers):
-            if child is node and i < len(brothers) - 1:
-                if not isinstance(brothers[i + 1], child.__class__):
-                    is_last = True
-                    break
-
-        if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
-            node.children.pop()
 
     def _line_comments(self, node: TerminalNodeImpl):
         if not self._option_comment:
@@ -409,5 +313,104 @@ class PureThriftFormatter(object):
         # deprecated
         pass
 
+
 class ThriftFormatter(PureThriftFormatter):
-    pass
+    def __init__(self, data: ThriftData):
+        super().__init__()
+
+        self._data: ThriftData = data
+        self._document: ThriftParser.DocumentContext = data.document
+
+        self._option_comment: bool = True
+        self._option_patch: bool = True
+        self._option_indent: int = 4
+
+    def option(self, comment: Optional[bool]=None, patch: Optional[bool]=None, indent:Optional[int]=None):
+        if comment is not None:
+            self._option_comment = comment
+        if patch is not None:
+            self._option_patch = patch
+        if indent is not None and indent > 0:
+            self._option_indent = indent
+
+    def format(self) -> str:
+        if self._option_patch:
+            self.patch()
+
+        return self.format_node(self._document)
+
+    def patch(self):
+        self._document.parent = None
+        self._walk(self._document, self._patch_field_req)
+        self._walk(self._document, self._patch_field_list_separator)
+        self._walk(self._document, self._patch_remove_last_list_separator)
+
+    @staticmethod
+    def _patch_field_req(node: ParseTree):
+        if not isinstance(node, ThriftParser.FieldContext):
+            return
+        if isinstance(node.parent, ThriftParser.Function_Context):
+            return
+
+        for i, child in enumerate(node.children):
+            if isinstance(child, ThriftParser.Field_reqContext):
+                return
+            if isinstance(child, ThriftParser.Field_typeContext):
+                break
+
+        fake_token = CommonToken()
+        fake_token.type = 21
+        fake_token.text = 'required'
+        fake_token.is_fake = True
+        fake_node = TerminalNodeImpl(fake_token)
+        fake_req = ThriftParser.Field_reqContext(parser=node.parser)
+        fake_req.children = [fake_node]
+        # patch
+        node.children.insert(i, fake_req)
+
+    @staticmethod
+    def _patch_field_list_separator(node: ParseTree):
+        classes = (
+            ThriftParser.Enum_fieldContext,
+            ThriftParser.FieldContext,
+            ThriftParser.Function_Context,
+        )
+        if not isinstance(node, classes):
+            return
+
+        tail = node.children[-1]
+        if isinstance(tail, ThriftParser.List_separatorContext):
+            tail.children[0].symbol.text = ','
+            return
+
+        fake_token = CommonToken()
+        fake_token.text = ','
+        fake_token.is_fake = True
+        fake_node = TerminalNodeImpl(fake_token)
+        fake_ctx = ThriftParser.List_separatorContext(parser=node.parser)
+        fake_ctx.children = [fake_node]
+        node.children.append(fake_ctx)
+
+    def _patch_remove_last_list_separator(self, node: ParseTree):
+        is_inline_field = isinstance(node, ThriftParser.FieldContext) and \
+            isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
+        is_inline_node = isinstance(node, ThriftParser.Type_annotationContext)
+
+        if is_inline_field or is_inline_node:
+            self._remove_last_list_separator(node)
+
+    @staticmethod
+    def _remove_last_list_separator(node: ParseTree):
+        if not node.parent:
+            return
+
+        is_last = False
+        brothers = node.parent.children
+        for i, child in enumerate(brothers):
+            if child is node and i < len(brothers) - 1:
+                if not isinstance(brothers[i + 1], child.__class__):
+                    is_last = True
+                    break
+
+        if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
+            node.children.pop()
