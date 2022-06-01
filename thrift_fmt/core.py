@@ -16,16 +16,27 @@ class ThriftFormatter(object):
     def __init__(self, data: ThriftData):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
-        self._option_comment = True
+        self._option_comment: bool = True
+        self._option_patch: bool = True
+        self._option_indent: int = 4
+
         self._newline_c: int = 0
         self._indent_s: str = ''
         self._last_token_index: int = -1
         self._field_padding: int = 0
 
-    def option(self, comment=True):
-        self._option_comment = comment
+    def option(self, comment=None, patch=None, indent=None):
+        if comment is not None:
+            self._option_comment = comment
+        if patch is not None:
+            self._option_patch = patch
+        if indent is not None:
+            self._option_indent = indent
 
     def format(self) -> str:
+        if self._option_patch:
+            self.patch()
+
         self._out: io.StringIO = io.StringIO()
         self._newline_c = 0
         self._indent_s = ''
@@ -287,8 +298,8 @@ class ThriftFormatter(object):
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
             self._field_padding = self._calc_field_padding(fields)
-            self._field_padding += 4  # indent
-            self._block_nodes(fields, indent=' '*4)
+            self._field_padding += self._option_indent
+            self._block_nodes(fields, indent=' ' * self._option_indent)
             self._field_padding = 0
             self._newline()
             self._inline_nodes(left)

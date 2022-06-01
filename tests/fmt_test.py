@@ -1,3 +1,4 @@
+from importlib.resources import path
 import os
 import glob
 
@@ -10,8 +11,7 @@ def run_fmt(file, patch=True):
     fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data)
-    if patch:
-        fmt.patch()
+    fmt.option(comment=True, patch=True, indent=4)
     return fmt.format()
 
 
