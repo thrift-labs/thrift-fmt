@@ -16,7 +16,6 @@ class PureThriftFormatter(object):
     def __init__(self):
         self._newline_c: int = 0
         self._indent_s: str = ''
-        self._field_padding: int = 0
 
     def format_node(self, node: ParseTree):
         self._out: io.StringIO = io.StringIO()
@@ -134,16 +133,24 @@ class PureThriftFormatter(object):
             self.walk_node(field, calc_field)
         return max(lengths)
 
+    def before_subfields(self, fields: List[ParseTree]):
+        self._field_padding = self._calc_field_padding(fields)
+        self._field_padding += self._option_indent
+
+    def after_subfields(self, _: List[ParseTree]):
+        self._field_padding = 0
+
     @staticmethod
     def _gen_subfields_Context(start: int, field_class: typing.Type):
-        def fn(self: ThriftFormatter, node: ParseTree):
+        def fn(self: PureThriftFormatter, node: ParseTree):
             self._inline_nodes(node.children[:start])
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
-            self._field_padding = self._calc_field_padding(fields)
-            self._field_padding += self._option_indent
+
+            self.before_subfields(fields)
             self._block_nodes(fields, indent=' ' * self._option_indent)
-            self._field_padding = 0
+            self.after_subfields(fields)
+
             self._newline()
             self._inline_nodes(left)
         return fn
@@ -253,6 +260,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._option_patch: bool = True
         self._option_indent: int = 4
 
+        self._field_padding: int = 0
         self._last_token_index: int = -1
 
     def option(self, comment: Optional[bool]=None, patch: Optional[bool]=None, indent:Optional[int]=None):
