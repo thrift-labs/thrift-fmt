@@ -78,7 +78,7 @@ assert header == 'include "shared.thrift"'
 
 ## Feature
 
-1. suppoort keep the comment
+1. support keeping the comment
 2. patch the required field
 3. align the fields comment
 4. format only single field
