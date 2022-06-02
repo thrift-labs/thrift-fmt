@@ -20,7 +20,7 @@ include "shared2.thrift" //a
 
 struct Xtruct2 {
     1: required i8 byte_thing,       // used to be byte, hence the name
-    //2: required Xtruct struct_thing, // b
+    2: required Xtruct struct_thing, // b
     3: required i32 i32_thing,       // a
 }
 

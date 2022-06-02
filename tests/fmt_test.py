@@ -83,7 +83,7 @@ def test_all_part():
     for i, out in enumerate(all_outs):
         print(i, out)
 
-    assert len(all_outs) == 149
+    assert len(all_outs) == 241
 
 
 def test_from_string():
