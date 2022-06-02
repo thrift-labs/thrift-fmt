@@ -371,8 +371,7 @@ class ThriftFormatter(PureThriftFormatter):
         return padding
 
     def before_subfields_hook(self, fields: List[ParseTree]):
-        self._field_padding = self._calc_subfields_padding(fields)
-        self._field_padding += self._option_indent
+        self._field_padding = self._calc_subfields_padding(fields) + self._option_indent
 
     def after_subfields_hook(self, _: List[ParseTree]):
         self._field_padding = 0
