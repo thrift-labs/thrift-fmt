@@ -8,7 +8,7 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def run_fmt(file, patch=True):
-    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
+    fin = os.path.abspath(os.path.join(TEST_DIR, 'fixtures', file))
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data)
     fmt.option(comment=True, patch=True, indent=4)
@@ -50,7 +50,7 @@ def test_all():
 
 def test_only_part():
     file = 'simple.thrift'
-    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
+    fin = os.path.abspath(os.path.join(TEST_DIR, 'fixtures', file))
     data = ThriftData.from_file(fin)
 
     parts = []
@@ -69,7 +69,7 @@ def test_only_part():
 
 def test_all_part():
     file = 'simple.thrift'
-    fin = os.path.abspath(os.path.join(TEST_DIR, '../fixtures/', file))
+    fin = os.path.abspath(os.path.join(TEST_DIR, 'fixtures', file))
     data = ThriftData.from_file(fin)
 
     # test walk
