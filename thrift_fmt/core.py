@@ -231,7 +231,13 @@ class PureThriftFormatter(object):
     )
     OnewayContext = _gen_inline_Context()
     Function_typeContext = _gen_inline_Context()
-    Throws_listContext = _gen_inline_Context()
+    Throws_listContext = _gen_inline_Context(
+        tight_fn=lambda i, n:
+            ThriftFormatter._is_token(n, '(') or
+            ThriftFormatter._is_token(n, ')') or
+            ThriftFormatter._is_token(n.parent.children[i-1], '(') or
+            isinstance(n, ThriftParser.List_separatorContext)
+    )
     Type_annotationsContext = _gen_inline_Context()
     Type_annotationContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
@@ -287,7 +293,7 @@ class ThriftFormatter(PureThriftFormatter):
     def _patch_field_req(node: ParseTree):
         if not isinstance(node, ThriftParser.FieldContext):
             return
-        if isinstance(node.parent, ThriftParser.Function_Context):
+        if isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext)):
             return
 
         for i, child in enumerate(node.children):
