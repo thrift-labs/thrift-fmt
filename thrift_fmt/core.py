@@ -181,13 +181,10 @@ class PureThriftFormatter(object):
         self.process_node(node.children[0])
 
     Type_ruleContext = _gen_inline_Context(join='')
-    Const_ruleContext = _gen_inline_Context(join='')
     Enum_fieldContext = _gen_inline_Context(
         join=' ',
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Field_ruleContext = _gen_inline_Context(join='')
-    Type_ruleContext = _gen_inline_Context(join='')
-    Type_annotationContext = _gen_inline_Context(join='')
     Type_idContext = _gen_inline_Context(join='')
     Type_listContext = _gen_inline_Context(join='')
     Type_mapContext = _gen_inline_Context(join='')
@@ -245,10 +242,8 @@ class PureThriftFormatter(object):
 
     def ServiceContext(self, node: ThriftParser.ServiceContext):
         fn = self._gen_subfields_Context(3, ThriftParser.Function_Context)
-        if isinstance(node.children[2], TerminalNodeImpl):
-            if node.children[2].symbol.text == 'extends':
-                fn = self._gen_subfields_Context(5, ThriftParser.Function_Context)
-
+        if self._is_token(node.children[2], 'extends'):
+            fn = self._gen_subfields_Context(5, ThriftParser.Function_Context)
         return fn(self, node)
 
     def SenumContext(self, node: ThriftParser.SenumContext):
@@ -364,7 +359,7 @@ class ThriftFormatter(PureThriftFormatter):
             return 0
 
         padding = 0
-        for i, field in enumerate(fields):
+        for field in fields:
             out = PureThriftFormatter().format_node(field)
             if len(out) > padding:
                 padding = len(out)
@@ -394,7 +389,7 @@ class ThriftFormatter(PureThriftFormatter):
             if self._last_token_index < token.tokenIndex < token_index:
                 comments.append(token)
 
-        for i, token in enumerate(comments):
+        for token in comments:
             if token.tokenIndex > 0 and token.type == ThriftParser.ML_COMMENT:
                 self._newline(2)
 
