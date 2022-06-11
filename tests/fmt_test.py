@@ -85,7 +85,6 @@ def test_all_part():
 
     assert len(all_outs) == 241
 
-
 def test_from_string():
     data = '''
     include    "shared.thrift"   // a
