@@ -27,7 +27,7 @@ struct Xtruct2 {
 struct Work {
     1: required i32 num1 = 0,
     2: required i32 num2,                       // num2 for
-    // 3: required Operation op,                   // op is Operation
+    // 3: required Operation op,                // op is Operation
     4: optional string comment,
     5: required map<string, list<string>> tags, //hello
 }
@@ -36,7 +36,6 @@ struct Person {
     1: list<string> tags,
     2: optional list<string> opt_tags,
     3: required list<string> req_tags,
-
     4: string name,
     5: optional string opt_name,
     6: required string req_name,
