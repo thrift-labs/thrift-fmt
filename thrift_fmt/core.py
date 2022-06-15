@@ -180,21 +180,14 @@ class PureThriftFormatter(object):
     def DefinitionContext(self, node: ThriftParser.DefinitionContext):
         self.process_node(node.children[0])
 
-    Enum_fieldContext = _gen_inline_Context(
-        join=' ',
-        tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
-    Field_ruleContext = _gen_inline_Context(join='')
-    Type_idContext = _gen_inline_Context(join='')
-    Type_listContext = _gen_inline_Context(join='')
-    Type_mapContext = _gen_inline_Context(join='')
-    Type_setContext = _gen_inline_Context(join='')
-    Type_baseContext = _gen_inline_Context(join='')
-    Type_identifierContext = _gen_inline_Context(join='')
     Include_Context = _gen_inline_Context()
     Namespace_Context = _gen_inline_Context()
     Typedef_Context = _gen_inline_Context()
     Base_typeContext = _gen_inline_Context()
     Field_typeContext = _gen_inline_Context()
+    Enum_fieldContext = _gen_inline_Context(
+        join=' ',
+        tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Real_base_typeContext = _gen_inline_Context()
     Const_ruleContext = _gen_inline_Context()
     Const_valueContext = _gen_inline_Context()
