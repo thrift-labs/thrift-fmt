@@ -180,7 +180,6 @@ class PureThriftFormatter(object):
     def DefinitionContext(self, node: ThriftParser.DefinitionContext):
         self.process_node(node.children[0])
 
-    Type_ruleContext = _gen_inline_Context(join='')
     Enum_fieldContext = _gen_inline_Context(
         join=' ',
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
