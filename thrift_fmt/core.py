@@ -184,10 +184,6 @@ class PureThriftFormatter(object):
     Namespace_Context = _gen_inline_Context()
     Typedef_Context = _gen_inline_Context()
     Base_typeContext = _gen_inline_Context()
-    Field_typeContext = _gen_inline_Context()
-    Enum_fieldContext = _gen_inline_Context(
-        join=' ',
-        tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Real_base_typeContext = _gen_inline_Context()
     Const_ruleContext = _gen_inline_Context()
     Const_valueContext = _gen_inline_Context()
@@ -201,6 +197,7 @@ class PureThriftFormatter(object):
     List_separatorContext = _gen_inline_Context()
     Field_idContext = _gen_inline_Context(join='')
     Field_reqContext = _gen_inline_Context()
+    Field_typeContext = _gen_inline_Context()
     Map_typeContext = _gen_inline_Context(
         tight_fn=lambda i, n: not ThriftFormatter._is_token(n.parent.children[i-1], ','))
     Const_listContext = _gen_inline_Context(
@@ -209,6 +206,9 @@ class PureThriftFormatter(object):
     Struct_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
     Union_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
     ExceptionContext = _gen_subfields_Context(3, ThriftParser.FieldContext)
+    Enum_fieldContext = _gen_inline_Context(
+        join=' ',
+        tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     FieldContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Function_Context = _gen_inline_Context(
