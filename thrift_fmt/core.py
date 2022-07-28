@@ -86,7 +86,7 @@ class PureThriftFormatter(object):
             ThriftParser.Enum_ruleContext,
             ThriftParser.Struct_Context,
             ThriftParser.Union_Context,
-            ThriftParser.ExceptionContext,
+            ThriftParser.Exception_Context,
             ThriftParser.ServiceContext,
         ))
 
@@ -208,7 +208,7 @@ class PureThriftFormatter(object):
     Enum_ruleContext = _gen_subfields_Context(3, ThriftParser.Enum_fieldContext)
     Struct_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
     Union_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
-    ExceptionContext = _gen_subfields_Context(3, ThriftParser.FieldContext)
+    Exception_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
     Enum_fieldContext = _gen_inline_Context(
         join=' ',
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
