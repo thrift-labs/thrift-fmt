@@ -27,8 +27,8 @@ struct foo {
 } ( cpp.type = "DenseFoo", python.type = "DenseFoo", java.final = "", annotation.without.value )
 
 const string default_user = "\'default_user\'" ;
+const string default_name = '"abc\'s"' ;
 
-//const string default_name = "\"hello\" world's";
 exception foo_error {
     1: required i32 error_code ( foo = "bar\'" ),
     2: required string error_msg,
