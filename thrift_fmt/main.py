@@ -19,10 +19,12 @@ from .core import ThriftData, ThriftFormatter, Option
     '--no-patch', is_flag=True, help='not patch thrift file')
 @click.option(
     '--remove-comment', is_flag=True, help='remove all comment')
+@click.option(
+    '--no-field-align', is_flag=True, help='disable filed align with assign')
 @click.argument(
     'file',
     type=click.Path(exists=True, file_okay=True, dir_okay=False), required=False)
-def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], file):
+def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], no_field_align: Optional[bool], file):
     if not dir and not file:
         raise click.ClickException('thrift file or dir is required')
 
@@ -34,8 +36,9 @@ def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[b
 
     option = Option(
         patch=not no_patch,
-        comment=bool(not remove_comment),
-        indent=indent)
+        comment=not remove_comment,
+        indent=indent,
+        field_align=not no_field_align)
 
     for file in files:
         data = ThriftData.from_file(file)
