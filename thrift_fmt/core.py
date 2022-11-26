@@ -356,8 +356,7 @@ class ThriftFormatter(PureThriftFormatter):
           left:  '1: required i32 number_a'
           right: '= 0,'
         '''
-
-        assert isinstance(node, ThriftParser.FieldContext)
+        assert isinstance(node, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext))
         left = copy.copy(node)
         right = copy.copy(node)
 
@@ -406,9 +405,11 @@ class ThriftFormatter(PureThriftFormatter):
         return left_padding, comment_padding
 
     def before_subfields_hook(self, fields: List[ParseTree]):
-        left_padding, comment_padding = self._calc_subfields_padding(fields)
-        self._field_left_padding = left_padding + self._option.indent
-        self._field_comment_padding = comment_padding + self._option.indent
+        # run this hook only for struct and enum fields
+        if len(fields) > 0 and isinstance(fields[0], (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext)):
+            left_padding, comment_padding = self._calc_subfields_padding(fields)
+            self._field_left_padding = left_padding + self._option.indent
+            self._field_comment_padding = comment_padding + self._option.indent
 
     def after_subfields_hook(self, _: List[ParseTree]):
         self._field_left_padding = 0
@@ -497,7 +498,8 @@ class ThriftFormatter(PureThriftFormatter):
         self._line_comments(node)
 
         # add field align
-        if isinstance(node.parent, ThriftParser.FieldContext) and node.symbol.text == '=':
-            self._padding(self._field_left_padding, ' ')
+        if isinstance(node.parent, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext)):
+            if node.symbol.text == '=':
+                self._padding(self._field_left_padding, ' ')
 
         super().TerminalNodeImpl(node)
