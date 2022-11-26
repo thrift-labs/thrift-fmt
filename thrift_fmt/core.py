@@ -262,6 +262,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
 
+        self._field_left_padding: int = 0
         self._field_comment_padding: int = 0
         self._last_token_index: int = -1
 
