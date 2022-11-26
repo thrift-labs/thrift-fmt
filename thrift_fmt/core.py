@@ -7,19 +7,30 @@ from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
 from antlr4.tree.Tree import ParseTree
 
-
 from thrift_parser import ThriftData
 from thrift_parser.ThriftParser import ThriftParser
 
 
-class PureThriftFormatter(object):
+class Option(object):
     DEFAULT_INDENT: int = 4
 
+    def __init__(self, patch :bool = True, comment :bool = True, indent :Optional[int] = None):
+        self.patch: bool = patch
+        self.comment: bool = comment
+        self.indent: int = self.DEFAULT_INDENT
+        if indent and indent > 0:
+            self.indent = indent
+
+class PureThriftFormatter(object):
+
     def __init__(self):
-        self._option_indent: int = self.DEFAULT_INDENT
+        self._option : Option = Option()
 
         self._newline_c: int = 0
         self._indent_s: str = ''
+
+    def option(self, option: Option):
+        self._option = option
 
     def format_node(self, node: ParseTree):
         self._out: io.StringIO = io.StringIO()
@@ -28,10 +39,6 @@ class PureThriftFormatter(object):
 
         self.process_node(node)
         return self._out.getvalue()
-
-    def set_indent(self, indent: int):
-        if indent > 0:
-            self._option_indent = indent
 
     def _push(self, text: str):
         if self._newline_c > 0:
@@ -136,7 +143,7 @@ class PureThriftFormatter(object):
             fields, left = self._get_repeat_children(node.children[start:], field_class)
 
             self.before_subfields_hook(fields)
-            self._block_nodes(fields, indent=' ' * self._option_indent)
+            self._block_nodes(fields, indent=' ' * self._option.indent)
             self.after_subfields_hook(fields)
 
             self._newline()
@@ -253,22 +260,11 @@ class ThriftFormatter(PureThriftFormatter):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
 
-        self._option_comment: bool = True
-        self._option_patch: bool = True
-
         self._field_padding: int = 0
         self._last_token_index: int = -1
 
-    def option(self, comment: Optional[bool] = None, patch: Optional[bool] = None, indent: Optional[int] = None):
-        if comment is not None:
-            self._option_comment = comment
-        if patch is not None:
-            self._option_patch = patch
-        if indent is not None:
-            self.set_indent(indent)
-
     def format(self) -> str:
-        if self._option_patch:
+        if self._option.patch:
             self.patch()
 
         return self.format_node(self._document)
@@ -361,7 +357,7 @@ class ThriftFormatter(PureThriftFormatter):
         return padding
 
     def before_subfields_hook(self, fields: List[ParseTree]):
-        self._field_padding = self._calc_subfields_padding(fields) + self._option_indent
+        self._field_padding = self._calc_subfields_padding(fields) + self._option.indent
 
     def after_subfields_hook(self, _: List[ParseTree]):
         self._field_padding = 0
@@ -370,7 +366,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._tail_comment()
 
     def _line_comments(self, node: TerminalNodeImpl):
-        if not self._option_comment:
+        if not self._option.comment:
             return
 
         if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
@@ -403,7 +399,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._last_token_index = node.symbol.tokenIndex
 
     def _tail_comment(self):
-        if not self._option_comment:
+        if not self._option.comment:
             return
 
         if self._last_token_index == -1:

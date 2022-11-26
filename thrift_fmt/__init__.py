@@ -1,1 +1,1 @@
-from .core import ThriftFormatter, PureThriftFormatter  # noqa
+from .core import ThriftFormatter, PureThriftFormatter, Option # noqa
