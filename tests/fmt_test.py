@@ -120,14 +120,16 @@ struct Work {
 def test_field_assign_align():
     data = '''
 struct Work {
-1: i32 number_a = 0,
-2: required i32 num2 = 1,
+1: i32 number_a = 0, // hello
+2: required i32 num2 = 1,//xyz
 }
 '''
 
     thrift = ThriftData.from_str(data)
-    out = ThriftFormatter(thrift).format()
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(field_align=True))
+    out = fmt.format()
     assert out == '''struct Work {
-    1: required i32 number_a = 0,
-    2: required i32 num2 = 1,
+    1: required i32 number_a = 0, // hello
+    2: required i32 num2     = 1, //xyz
 }'''
