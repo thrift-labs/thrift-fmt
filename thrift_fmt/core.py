@@ -351,8 +351,12 @@ class ThriftFormatter(PureThriftFormatter):
     @staticmethod
     def _split_field_define_assign(node: ParseTree):
         '''
-          split file to two parts
+          split field to [left, right]
+          field: '1: required i32 number_a = 0,'
+          left:  '1: required i32 number_a'
+          right: '= 0,'
         '''
+
         assert isinstance(node, ThriftParser.FieldContext)
         left = copy.copy(node)
         right = copy.copy(node)
