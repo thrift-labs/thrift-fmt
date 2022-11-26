@@ -2,7 +2,7 @@ import os
 import glob
 
 from thrift_parser import ThriftData
-from thrift_fmt import PureThriftFormatter, ThriftFormatter
+from thrift_fmt import PureThriftFormatter, ThriftFormatter, Option
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -11,7 +11,7 @@ def run_fmt(file, patch=True):
     fin = os.path.abspath(os.path.join(TEST_DIR, 'fixtures', file))
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data)
-    fmt.option(comment=True, patch=True, indent=4)
+    fmt.option(Option(comment=True, patch=True, indent=4))
     return fmt.format()
 
 

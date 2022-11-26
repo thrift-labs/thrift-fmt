@@ -91,6 +91,16 @@ assert header == 'include "shared.thrift"'
 4. better code
 5. other language ?
 
+## Dev
+
+pdm install
+
+pdm run pytest
+
+pdm build
+
+pdm run thrift-fmt
+
 # LICENSE
 
 some thrift files in fixtures thrift was copy from https://github.com/apache/thrift/blob/master/tutorial/ , The Apache LICENSE
