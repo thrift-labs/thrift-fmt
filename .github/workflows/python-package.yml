@@ -36,3 +36,7 @@ jobs:
     - name: Test with pytest
       run: |
         pdm run -v pytest tests
+
+    - name: Test with Real
+      run: |
+        pdm run -v thrift-fmt -d ./tests/fixtures -w
