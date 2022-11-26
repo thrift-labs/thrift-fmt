@@ -142,11 +142,11 @@ class PureThriftFormatter(object):
         def fn(self: PureThriftFormatter, node: ParseTree):
             self._inline_nodes(node.children[:start])
             self._newline()
-            fields, left = self._get_repeat_children(node.children[start:], field_class)
+            subblocks, left = self._get_repeat_children(node.children[start:], field_class)
 
-            self.before_subblocks_hook(fields)
-            self._block_nodes(fields, indent=' ' * self._option.indent)
-            self.after_subblocks_hook(fields)
+            self.before_subblocks_hook(subblocks)
+            self._block_nodes(subblocks, indent=' ' * self._option.indent)
+            self.after_subblocks_hook(subblocks)
 
             self._newline()
             self._inline_nodes(left)
@@ -366,29 +366,27 @@ class ThriftFormatter(PureThriftFormatter):
 
         i = 0
         for i, child in enumerate(node.children):
-            if isinstance(child, TerminalNodeImpl):
-                if child.symbol.text == '=':
-                    break
+            if ThriftFormatter._is_token(child, '='):
+                break
 
         left.children = node.children[:i]
         right.children = node.children[i:]
         return left, right
 
-    def _calc_subblocks_padding(self, fields: List[ParseTree]):
-        '''
-        field: '1: required i32 number_a = 0,'
-        left_padding:    field.index('=')
-        comment_padding: len(field)
-        '''
-        if not fields:
+    def _calc_subblocks_padding(self, subblocks: List[ParseTree]) -> Tuple[int, int]:
+        if not subblocks:
             return 0, 0
 
         # only field is FieldContext or Enum_fieldContext
-        if self._option.field_align and self._is_field_or_enum_field(fields[0]):
-            # clac align padding
+        if self._option.field_align and self._is_field_or_enum_field(subblocks[0]):
+            '''
+                field: '1: required i32 number_a = 0,'
+                assign_padding:    field.index('=')
+                comment_padding:  max(assign) + max(left)
+            '''
             left_max_size = 0
             right_max_size = 0
-            for field in fields:
+            for field in subblocks:
                 left, right = self._split_field_define_assign(field)
                 left_size = len(PureThriftFormatter().format_node(left))
                 right_size = len(PureThriftFormatter().format_node(right))
@@ -402,17 +400,17 @@ class ThriftFormatter(PureThriftFormatter):
         else:
             assign_padding = 0
             comment_padding = 0
-            for field in fields:
-                field_size = len(PureThriftFormatter().format_node(field))
-                comment_padding = max(comment_padding, field_size)
+            for subblock in subblocks:
+                subblock_size = len(PureThriftFormatter().format_node(subblock))
+                comment_padding = max(comment_padding, subblock_size)
 
         return assign_padding, comment_padding
 
-    def before_subblocks_hook(self, fields: List[ParseTree]):
+    def before_subblocks_hook(self, subblocks: List[ParseTree]):
         # fileds : [ Function ] | [ Field]
 
         # calculate the subblocks's padding
-        assign_padding, comment_padding = self._calc_subblocks_padding(fields)
+        assign_padding, comment_padding = self._calc_subblocks_padding(subblocks)
         if assign_padding > 0:
             self._field_assign_padding = assign_padding + self._option.indent
         if comment_padding > 0:
@@ -504,9 +502,8 @@ class ThriftFormatter(PureThriftFormatter):
         # add abrove comments
         self._line_comments(node)
 
-        # add field align
-        if isinstance(node.parent, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext)):
-            if node.symbol.text == '=':
-                self._padding(self._field_assign_padding, ' ')
+        # add field assign padding
+        if self._option.field_align and self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
+            self._padding(self._field_assign_padding, ' ')
 
         super().TerminalNodeImpl(node)
