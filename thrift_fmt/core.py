@@ -20,6 +20,7 @@ class Option(object):
         self.indent: int = self.DEFAULT_INDENT
         if indent and indent > 0:
             self.indent = indent
+        self.field_align: bool = True
 
 class PureThriftFormatter(object):
 
@@ -260,7 +261,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
 
-        self._field_padding: int = 0
+        self._field_comment_padding: int = 0
         self._last_token_index: int = -1
 
     def format(self) -> str:
@@ -345,7 +346,7 @@ class ThriftFormatter(PureThriftFormatter):
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
-    def _calc_subfields_padding(self, fields: List[ParseTree]):
+    def _calc_subfields_comment_padding(self, fields: List[ParseTree]):
         if not fields:
             return 0
 
@@ -357,10 +358,10 @@ class ThriftFormatter(PureThriftFormatter):
         return padding
 
     def before_subfields_hook(self, fields: List[ParseTree]):
-        self._field_padding = self._calc_subfields_padding(fields) + self._option.indent
+        self._field_comment_padding = self._calc_subfields_comment_padding(fields) + self._option.indent
 
     def after_subfields_hook(self, _: List[ParseTree]):
-        self._field_padding = 0
+        self._field_comment_padding = 0
 
     def after_block_node_hook(self, _: ParseTree):
         self._tail_comment()
@@ -416,9 +417,9 @@ class ThriftFormatter(PureThriftFormatter):
 
         assert len(comments) <= 1
         if comments:
-            if self._field_padding > 0:
+            if self._field_comment_padding > 0:
                 cur = len(self._out.getvalue().rsplit('\n', 1)[-1])
-                padding = self._field_padding - cur
+                padding = self._field_comment_padding - cur
                 if padding > 0:
                     self._append(' ' * padding)
 
