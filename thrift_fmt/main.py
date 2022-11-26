@@ -24,7 +24,7 @@ from .core import ThriftData, ThriftFormatter, Option
 @click.argument(
     'file',
     type=click.Path(exists=True, file_okay=True, dir_okay=False), required=False)
-def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], no_field_align: Optional[bool], file):
+def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], no_assign_align: Optional[bool], file):
     if not dir and not file:
         raise click.ClickException('thrift file or dir is required')
 
@@ -38,7 +38,7 @@ def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[b
         patch=not no_patch,
         comment=not remove_comment,
         indent=indent,
-        field_align=not no_field_align)
+        assign_align=not no_assign_align)
 
     for file in files:
         data = ThriftData.from_file(file)
