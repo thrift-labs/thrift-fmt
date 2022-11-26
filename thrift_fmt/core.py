@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 import io
 import typing
 from typing import List, Optional, Callable, Tuple
@@ -14,12 +15,13 @@ from thrift_parser.ThriftParser import ThriftParser
 class Option(object):
     DEFAULT_INDENT: int = 4
 
-    def __init__(self, patch :bool = True, comment :bool = True, indent :Optional[int] = None):
+    def __init__(self, patch :bool = True, comment :bool = True, indent :Optional[int] = None, field_align: bool=False):
         self.patch: bool = patch
         self.comment: bool = comment
         self.indent: int = self.DEFAULT_INDENT
         if indent and indent > 0:
             self.indent = indent
+        self.field_align: bool = field_align
 
 class PureThriftFormatter(object):
 
@@ -260,7 +262,8 @@ class ThriftFormatter(PureThriftFormatter):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
 
-        self._field_padding: int = 0
+        self._field_left_padding: int = 0
+        self._field_comment_padding: int = 0
         self._last_token_index: int = -1
 
     def format(self) -> str:
@@ -345,25 +348,86 @@ class ThriftFormatter(PureThriftFormatter):
         if is_last and isinstance(node.children[-1], ThriftParser.List_separatorContext):
             node.children.pop()
 
-    def _calc_subfields_padding(self, fields: List[ParseTree]):
-        if not fields:
-            return 0
+    @staticmethod
+    def _split_field_define_assign(node: ParseTree):
+        '''
+          split field to [left, right]
+          field: '1: required i32 number_a = 0,'
+          left:  '1: required i32 number_a'
+          right: '= 0,'
+        '''
 
-        padding = 0
-        for field in fields:
-            out = PureThriftFormatter().format_node(field)
-            if len(out) > padding:
-                padding = len(out)
-        return padding
+        assert isinstance(node, ThriftParser.FieldContext)
+        left = copy.copy(node)
+        right = copy.copy(node)
+
+        i = 0
+        for i, child in enumerate(node.children):
+            if isinstance(child, TerminalNodeImpl):
+                if child.symbol.text == '=':
+                    break
+
+        left.children = node.children[:i]
+        right.children = node.children[i:]
+        return left, right
+
+    def _calc_subfields_padding(self, fields: List[ParseTree]):
+        '''
+        field: '1: required i32 number_a = 0,'
+        left_padding:    field.index('=')
+        comment_padding: len(field)
+        '''
+        if not fields:
+            return 0, 0
+
+        if self._option.field_align:
+            # clac align padding
+            left_max_size = 0
+            right_max_size = 0
+            for field in fields:
+                left, right = self._split_field_define_assign(field)
+                left_size = len(PureThriftFormatter().format_node(left))
+                right_size = len(PureThriftFormatter().format_node(right))
+
+                left_max_size = max(left_max_size, left_size)
+                right_max_size = max(right_max_size, right_size)
+            # add extra space
+            left_padding = left_max_size + 1
+            comment_padding = left_max_size + 1 + right_max_size
+        else:
+            left_padding = 0
+
+            comment_padding = 0
+            for field in fields:
+                out = PureThriftFormatter().format_node(field)
+                if len(out) > comment_padding:
+                    comment_padding = len(out)
+
+        return left_padding, comment_padding
 
     def before_subfields_hook(self, fields: List[ParseTree]):
-        self._field_padding = self._calc_subfields_padding(fields) + self._option.indent
+        left_padding, comment_padding = self._calc_subfields_padding(fields)
+        self._field_left_padding = left_padding + self._option.indent
+        self._field_comment_padding = comment_padding + self._option.indent
 
     def after_subfields_hook(self, _: List[ParseTree]):
-        self._field_padding = 0
+        self._field_left_padding = 0
+        self._field_comment_padding = 0
 
     def after_block_node_hook(self, _: ParseTree):
         self._tail_comment()
+
+    def _get_current_line(self):
+        cur = self._out.getvalue().rsplit('\n', 1)[-1]
+        return cur
+
+    def _padding(self, padding: int, pad: str=' '):
+        if padding <= 0:
+            return
+        cur = self._get_current_line()
+        padding = padding - len(cur)
+        if padding > 0:
+            self._append(pad * padding)
 
     def _line_comments(self, node: TerminalNodeImpl):
         if not self._option.comment:
@@ -416,12 +480,7 @@ class ThriftFormatter(PureThriftFormatter):
 
         assert len(comments) <= 1
         if comments:
-            if self._field_padding > 0:
-                cur = len(self._out.getvalue().rsplit('\n', 1)[-1])
-                padding = self._field_padding - cur
-                if padding > 0:
-                    self._append(' ' * padding)
-
+            self._padding(self._field_comment_padding, ' ')
             self._append(' ')
             self._append(comments[0].text.strip())
             self._push('')
@@ -436,5 +495,9 @@ class ThriftFormatter(PureThriftFormatter):
 
         # add abrove comments
         self._line_comments(node)
+
+        # add field align
+        if isinstance(node.parent, ThriftParser.FieldContext) and node.symbol.text == '=':
+            self._padding(self._field_left_padding, ' ')
 
         super().TerminalNodeImpl(node)

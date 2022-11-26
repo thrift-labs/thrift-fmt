@@ -116,3 +116,20 @@ struct Work {
     # or only a single node
     header = PureThriftFormatter().format_node(thrift.document.children[0])
     assert header == 'include "shared.thrift"'
+
+def test_field_assign_align():
+    data = '''
+struct Work {
+1: i32 number_a = 0, // hello
+2: required i32 num2 = 1,//xyz
+}
+'''
+
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(field_align=True))
+    out = fmt.format()
+    assert out == '''struct Work {
+    1: required i32 number_a = 0, // hello
+    2: required i32 num2     = 1, //xyz
+}'''
