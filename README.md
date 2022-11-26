@@ -6,7 +6,7 @@ the parser is https://github.com/alingse/thrift-parser
 ## Usage
 
 ```bash
-thrift-fmt -w mythrift.thrift
+thrift-fmt mythrift.thrift
 ```
 
 ```bash
@@ -20,33 +20,26 @@ pip install thrift-fmt
 ```
 ### format files
 
-single file
-
+format single file and print to stdout
 ```bash
 thrift-fmt mythrift.thrift
 ```
 
+format and overwrite the origin file
 ```bash
 thrift-fmt -w mythrift.thrift
 ```
 
-or directory (this will overwrite the origin file, please keep in track)
-
+format a directory, this will overwrite the origin file, please keep in track
 ```bash
 thrift-fmt -d ./thrift_files
-```
-
-or more options see help
-
-```bash
-thrift-fmt --help
 ```
 
 ## Use in Code
 
 use `ThriftData` parse from file / stdin / str
 
-use `ThriftFormatter` or `PureThriftFormatter` format the data
+use `ThriftFormatter` or `PureThriftFormatter` format the parsed thrift data.
 
 ```python
 from thrift_fmt import ThriftFormatter, PureThriftFormatter
