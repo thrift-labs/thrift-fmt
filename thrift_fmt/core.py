@@ -496,7 +496,7 @@ class ThriftFormatter(PureThriftFormatter):
         # add abrove comments
         self._line_comments(node)
 
-        # add field algin
+        # add field align
         if isinstance(node.parent, ThriftParser.FieldContext) and node.symbol.text == '=':
             self._padding(self._field_left_padding, ' ')
 
