@@ -138,27 +138,27 @@ class PureThriftFormatter(object):
         return fn
 
     @staticmethod
-    def gen_subfields_Context(start: int, field_class: typing.Type):
+    def gen_subblocks_Context(start: int, field_class: typing.Type):
         def fn(self: PureThriftFormatter, node: ParseTree):
             self._inline_nodes(node.children[:start])
             self._newline()
             fields, left = self._get_repeat_children(node.children[start:], field_class)
 
-            self.before_subfields_hook(fields)
+            self.before_subblocks_hook(fields)
             self._block_nodes(fields, indent=' ' * self._option.indent)
-            self.after_subfields_hook(fields)
+            self.after_subblocks_hook(fields)
 
             self._newline()
             self._inline_nodes(left)
         return fn
 
     _gen_inline_Context = gen_inline_Context.__func__
-    _gen_subfields_Context = gen_subfields_Context.__func__
+    _gen_subblocks_Context = gen_subblocks_Context.__func__
 
-    def before_subfields_hook(self, _: List[ParseTree]):
+    def before_subblocks_hook(self, _: List[ParseTree]):
         pass
 
-    def after_subfields_hook(self, _: List[ParseTree]):
+    def after_subblocks_hook(self, _: List[ParseTree]):
         pass
 
     def process_node(self, node: ParseTree):
@@ -214,10 +214,10 @@ class PureThriftFormatter(object):
         tight_fn=lambda i, n: not PureThriftFormatter._is_token(n.parent.children[i-1], ','))
     Const_listContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
-    Enum_ruleContext = _gen_subfields_Context(3, ThriftParser.Enum_fieldContext)
-    Struct_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
-    Union_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
-    Exception_Context = _gen_subfields_Context(3, ThriftParser.FieldContext)
+    Enum_ruleContext = _gen_subblocks_Context(3, ThriftParser.Enum_fieldContext)
+    Struct_Context = _gen_subblocks_Context(3, ThriftParser.FieldContext)
+    Union_Context = _gen_subblocks_Context(3, ThriftParser.FieldContext)
+    Exception_Context = _gen_subblocks_Context(3, ThriftParser.FieldContext)
     Enum_fieldContext = _gen_inline_Context(
         join=' ',
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
@@ -245,9 +245,9 @@ class PureThriftFormatter(object):
     Annotation_valueContext = _gen_inline_Context()
 
     def ServiceContext(self, node: ThriftParser.ServiceContext):
-        fn = self.gen_subfields_Context(3, ThriftParser.Function_Context)
+        fn = self.gen_subblocks_Context(3, ThriftParser.Function_Context)
         if self._is_token(node.children[2], 'extends'):
-            fn = self.gen_subfields_Context(5, ThriftParser.Function_Context)
+            fn = self.gen_subblocks_Context(5, ThriftParser.Function_Context)
         return fn(self, node)
 
     def SenumContext(self, node: ThriftParser.SenumContext):
@@ -262,7 +262,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
 
-        self._field_left_padding: int = 0
+        self._field_assign_padding: int = 0
         self._field_comment_padding: int = 0
         self._last_token_index: int = -1
 
@@ -349,6 +349,10 @@ class ThriftFormatter(PureThriftFormatter):
             node.children.pop()
 
     @staticmethod
+    def _is_field_or_enum_field(node: ParseTree):
+        return isinstance(node, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext))
+
+    @staticmethod
     def _split_field_define_assign(node: ParseTree):
         '''
           split field to [left, right]
@@ -356,7 +360,7 @@ class ThriftFormatter(PureThriftFormatter):
           left:  '1: required i32 number_a'
           right: '= 0,'
         '''
-        assert isinstance(node, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext))
+        assert ThriftFormatter._is_field_or_enum_field(node)
         left = copy.copy(node)
         right = copy.copy(node)
 
@@ -370,7 +374,7 @@ class ThriftFormatter(PureThriftFormatter):
         right.children = node.children[i:]
         return left, right
 
-    def _calc_subfields_padding(self, fields: List[ParseTree]):
+    def _calc_subblocks_padding(self, fields: List[ParseTree]):
         '''
         field: '1: required i32 number_a = 0,'
         left_padding:    field.index('=')
@@ -379,7 +383,8 @@ class ThriftFormatter(PureThriftFormatter):
         if not fields:
             return 0, 0
 
-        if self._option.field_align:
+        # only field is FieldContext or Enum_fieldContext
+        if self._option.field_align and self._is_field_or_enum_field(fields[0]):
             # clac align padding
             left_max_size = 0
             right_max_size = 0
@@ -390,29 +395,31 @@ class ThriftFormatter(PureThriftFormatter):
 
                 left_max_size = max(left_max_size, left_size)
                 right_max_size = max(right_max_size, right_size)
+
             # add extra space
-            left_padding = left_max_size + 1
+            assign_padding = left_max_size + 1
             comment_padding = left_max_size + 1 + right_max_size
         else:
-            left_padding = 0
-
+            assign_padding = 0
             comment_padding = 0
             for field in fields:
-                out = PureThriftFormatter().format_node(field)
-                if len(out) > comment_padding:
-                    comment_padding = len(out)
+                field_size = len(PureThriftFormatter().format_node(field))
+                comment_padding = max(comment_padding, field_size)
 
-        return left_padding, comment_padding
+        return assign_padding, comment_padding
 
-    def before_subfields_hook(self, fields: List[ParseTree]):
-        # run this hook only for struct and enum fields
-        if len(fields) > 0 and isinstance(fields[0], (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext)):
-            left_padding, comment_padding = self._calc_subfields_padding(fields)
-            self._field_left_padding = left_padding + self._option.indent
+    def before_subblocks_hook(self, fields: List[ParseTree]):
+        # fileds : [ Function ] | [ Field]
+
+        # calculate the subblocks's padding
+        assign_padding, comment_padding = self._calc_subblocks_padding(fields)
+        if assign_padding > 0:
+            self._field_assign_padding = assign_padding + self._option.indent
+        if comment_padding > 0:
             self._field_comment_padding = comment_padding + self._option.indent
 
-    def after_subfields_hook(self, _: List[ParseTree]):
-        self._field_left_padding = 0
+    def after_subblocks_hook(self, _: List[ParseTree]):
+        self._field_assign_padding = 0
         self._field_comment_padding = 0
 
     def after_block_node_hook(self, _: ParseTree):
@@ -500,6 +507,6 @@ class ThriftFormatter(PureThriftFormatter):
         # add field align
         if isinstance(node.parent, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext)):
             if node.symbol.text == '=':
-                self._padding(self._field_left_padding, ' ')
+                self._padding(self._field_assign_padding, ' ')
 
         super().TerminalNodeImpl(node)
