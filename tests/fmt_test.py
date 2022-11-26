@@ -133,3 +133,31 @@ struct Work {
     1: required i32 number_a = 0, // hello
     2: required i32 num2     = 1, //xyz
 }'''
+
+def test_field_assign_align_for_enum():
+    data = '''
+enum Numberz
+{
+  ONE = 1,
+  TWO,
+  THREE,
+  FIVE = 5,
+  SIX,
+  EIGHT = 8
+}
+'''
+
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(field_align=True, indent=2))
+    out = fmt.format()
+    assert out == '''enum Numberz {
+  ONE   = 1,
+  TWO,
+  THREE,
+  FIVE  = 5,
+  SIX,
+  EIGHT = 8,
+}'''
+
+
