@@ -14,17 +14,17 @@ from .core import ThriftData, ThriftFormatter, Option
     help='Write to file instead of stdout, default true when dir was set')
 @click.option(
     '-i', '--indent', type=click.IntRange(min=0), default=None,
-    help='struct/enum/service sub fields indent, default {}'.format(Option.DEFAULT_INDENT))
+    help='sub field indent of struct/enum/service/union/exception, default {}'.format(Option.DEFAULT_INDENT))
 @click.option(
-    '--no-patch', is_flag=True, help='not patch thrift file')
+    '--no-patch', is_flag=True, help='disable field patch about comma and required flag')
 @click.option(
     '--remove-comment', is_flag=True, help='remove all comment')
 @click.option(
-    '--no-field-align', is_flag=True, help='disable filed align with assign')
+    '--no-assign-align', is_flag=True, help='disable field assign align')
 @click.argument(
     'file',
     type=click.Path(exists=True, file_okay=True, dir_okay=False), required=False)
-def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], no_field_align: Optional[bool], file):
+def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], no_assign_align: Optional[bool], file):
     if not dir and not file:
         raise click.ClickException('thrift file or dir is required')
 
@@ -38,7 +38,7 @@ def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[b
         patch=not no_patch,
         comment=not remove_comment,
         indent=indent,
-        field_align=not no_field_align)
+        assign_align=not no_assign_align)
 
     for file in files:
         data = ThriftData.from_file(file)

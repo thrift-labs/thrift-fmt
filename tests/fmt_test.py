@@ -127,7 +127,7 @@ struct Work {
 
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
-    fmt.option(Option(field_align=True))
+    fmt.option(Option(assign_align=True))
     out = fmt.format()
     assert out == '''struct Work {
     1: required i32 number_a = 0, // hello
@@ -149,7 +149,7 @@ enum Numberz
 
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
-    fmt.option(Option(field_align=True, indent=2))
+    fmt.option(Option(assign_align=True, indent=2))
     out = fmt.format()
     assert out == '''enum Numberz {
   ONE   = 1,

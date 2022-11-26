@@ -5,6 +5,14 @@ the parser is https://github.com/alingse/thrift-parser
 
 ## Usage
 
+```bash
+thrift-fmt -w mythrift.thrift
+```
+
+```bash
+thrift-fmt --help
+```
+
 ### install
 
 ```bash
@@ -19,7 +27,7 @@ thrift-fmt mythrift.thrift
 ```
 
 ```bash
-thrift-fmt mythrift.thrift -w
+thrift-fmt -w mythrift.thrift
 ```
 
 or directory (this will overwrite the origin file, please keep in track)
@@ -78,29 +86,37 @@ assert header == 'include "shared.thrift"'
 
 ## Feature
 
-1. suppoort keep the comment
-2. patch the required field
-3. align the fields comment
-4. format only single field
+1. suppoort keep and align the comment
+2. auto patch list separator and field's `required` flag
+3. align the field's assign
+4. support format part of the thrift parsed result
+
+example
+```
+struct Work {
+    1: required i32 number_a = 0, // hello
+    2: optional i32 num2     = 1, // xyz
+}
+```
 
 ### TODO
 
 1. support function blank line count
 2. fix //a comment
-3. support Enum field
-4. better code
-5. other language ?
+3. better code
+4. other language ?
 
 ## Dev
 
+```bash
 pdm install
 
 pdm run pytest
 
 pdm build
 
-pdm run thrift-fmt
-
+pdm run thrift-fmt --help
+```
 # LICENSE
 
 some thrift files in fixtures thrift was copy from https://github.com/apache/thrift/blob/master/tutorial/ , The Apache LICENSE
