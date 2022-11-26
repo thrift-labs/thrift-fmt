@@ -407,7 +407,7 @@ class ThriftFormatter(PureThriftFormatter):
         return assign_padding, comment_padding
 
     def before_subblocks_hook(self, subblocks: List[ParseTree]):
-        # fileds : [ Function ] | [ Field]
+        # subblocks : [ Function ] | [ Field]
 
         # calculate the subblocks's padding
         assign_padding, comment_padding = self._calc_subblocks_padding(subblocks)
