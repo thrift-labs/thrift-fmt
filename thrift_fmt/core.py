@@ -388,11 +388,13 @@ class ThriftFormatter(PureThriftFormatter):
             right_max_size = 0
             for field in subblocks:
                 left, right = self._split_field_define_assign(field)
-                left_size = len(PureThriftFormatter().format_node(left))
-                right_size = len(PureThriftFormatter().format_node(right))
-
+                left_value = PureThriftFormatter().format_node(left)
+                right_value = PureThriftFormatter().format_node(right)
+                left_size = len(left_value)
+                right_size = len(right_value)
                 left_max_size = max(left_max_size, left_size)
                 right_max_size = max(right_max_size, right_size)
+
 
             # add extra space
             assign_padding = left_max_size + 1
