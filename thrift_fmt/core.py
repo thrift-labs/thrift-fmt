@@ -399,10 +399,12 @@ class ThriftFormatter(PureThriftFormatter):
                 left_max_size = max(left_max_size, left_size)
                 right_max_size = max(right_max_size, right_size)
 
-
-            # add extra space
+            # add extra for space or list sep
             assign_padding = left_max_size + 1
-            comment_padding = left_max_size + 1 + right_max_size
+            comment_padding = left_max_size + right_max_size
+            # if it is not list sep, need add extra space
+            if right_max_size > 1:
+                comment_padding += 1
         else:
             assign_padding = 0
             comment_padding = 0
