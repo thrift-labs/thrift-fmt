@@ -371,7 +371,7 @@ class ThriftFormatter(PureThriftFormatter):
                 cur_left = False
                 break
 
-        if not cur_left:
+        if cur_left:
             i += 1
         left.children = node.children[:i]
         right.children = node.children[i:]
