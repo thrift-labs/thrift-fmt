@@ -174,7 +174,26 @@ def test_field_assign_align_with_complex():
     fmt.option(Option(assign_align=True, indent=4, patch=False))
     out = fmt.format()
     assert out == '''enum NUM {
-    ONE   = 1,
-    SEVEN = 7,
+    ONE     = 1,
+    SEVEN   = 7,
+    ELEVLEN
+}'''
+
+
+def test_field_assign_align_with_complex2():
+    data = '''enum NUM {
+            ONE =1,
+            SEVEN = 7,
+            ELEVLEN
+        }
+    '''
+
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(assign_align=True, indent=4, patch=False))
+    out = fmt.format()
+    assert out == '''enum NUM {
+    ONE     = 1,
+    SEVEN   = 7,
     ELEVLEN
 }'''
