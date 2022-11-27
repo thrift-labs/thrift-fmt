@@ -174,7 +174,7 @@ def test_field_assign_align_with_complex():
     fmt.option(Option(assign_align=True, indent=4, patch=False))
     out = fmt.format()
     assert out == '''enum NUM {
-    ONE   = 1,
-    SEVEN = 7,
+    ONE     = 1,
+    SEVEN   = 7,
     ELEVLEN
 }'''

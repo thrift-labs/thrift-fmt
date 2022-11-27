@@ -365,10 +365,14 @@ class ThriftFormatter(PureThriftFormatter):
         right = copy.copy(node)
 
         i = 0
+        cur_left = True
         for i, child in enumerate(node.children):
-            if ThriftFormatter._is_token(child, '='):
+            if ThriftFormatter._is_token(child, '=') or isinstance(child, ThriftParser.List_separatorContext):
+                cur_left = False
                 break
 
+        if not cur_left:
+            i += 1
         left.children = node.children[:i]
         right.children = node.children[i:]
         return left, right
