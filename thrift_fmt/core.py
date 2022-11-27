@@ -176,7 +176,7 @@ class PureThriftFormatter(object):
         if self._is_EOF(node):
             return
 
-        # add indent
+        # add indent for first real token
         if self._indent_s:
             self._push(self._indent_s)
             self._indent_s = ''
@@ -353,12 +353,10 @@ class ThriftFormatter(PureThriftFormatter):
         return isinstance(node, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext))
 
     @staticmethod
-    def _split_field_define_assign(node: ParseTree):
+    def _split_field_by_assign(node: ParseTree):
         '''
-          split field to [left, right]
-          field: '1: required i32 number_a = 0,'
-          left:  '1: required i32 number_a'
-          right: '= 0,'
+          split field to [left, right] by assgin
+          field: '1: required i32 number_a = 0,' --> left:  '1: required i32 number_a' and right: '= 0,'
         '''
         assert ThriftFormatter._is_field_or_enum_field(node)
         left = copy.copy(node)
@@ -370,7 +368,7 @@ class ThriftFormatter(PureThriftFormatter):
             if ThriftFormatter._is_token(child, '=') or isinstance(child, ThriftParser.List_separatorContext):
                 cur_left = False
                 break
-
+        # check if last child is belong to left.
         if cur_left:
             i += 1
         left.children = node.children[:i]
@@ -379,45 +377,46 @@ class ThriftFormatter(PureThriftFormatter):
 
     def _calc_subblocks_padding(self, subblocks: List[ParseTree]) -> Tuple[int, int]:
         if not subblocks:
-            return 0, 0
+            return (0, 0)
 
-        # only field is FieldContext or Enum_fieldContext
+        assign_padding = 0
+        comment_padding = 0
+
+        # only field is FieldContext or Enum_fieldContext need check for assign_padding
         if self._option.assign_align and self._is_field_or_enum_field(subblocks[0]):
             '''
                 field: '1: required i32 number_a = 0,'
-                assign_padding:    field.index('=')
-                comment_padding:  max(assign) + max(left)
+                assign_padding:   max(left)
+                comment_padding:  max(left) + max(right) [+ 1]
             '''
             left_max_size = 0
             right_max_size = 0
             for field in subblocks:
-                left, right = self._split_field_define_assign(field)
-                left_value = PureThriftFormatter().format_node(left)
-                right_value = PureThriftFormatter().format_node(right)
-                left_size = len(left_value)
-                right_size = len(right_value)
-                left_max_size = max(left_max_size, left_size)
-                right_max_size = max(right_max_size, right_size)
+                left, right = self._split_field_by_assign(field)
+                left_max_size = max(left_max_size, len(PureThriftFormatter().format_node(left)))
+                right_max_size = max(right_max_size, len(PureThriftFormatter().format_node(right)))
 
             # add extra for space or list sep
             assign_padding = left_max_size + 1
             comment_padding = left_max_size + right_max_size
-            # if it is not list sep, need add extra space
+            '''
+                if it is not list sep, need add extra space
+                case 1 --> "1: bool a = true," ---> "1: bool a" + " " + "= true,"
+                case 2 --> "2: bool b," ---> "2: bool b" + "" + ","
+            '''
             if right_max_size > 1:
                 comment_padding += 1
         else:
-            assign_padding = 0
-            comment_padding = 0
             for subblock in subblocks:
-                subblock_size = len(PureThriftFormatter().format_node(subblock))
-                comment_padding = max(comment_padding, subblock_size)
+                comment_padding = max(comment_padding,
+                    len(PureThriftFormatter().format_node(subblock)))
 
         return assign_padding, comment_padding
 
     def before_subblocks_hook(self, subblocks: List[ParseTree]):
-        # subblocks : [ Function ] | [ Field]
+        # subblocks : [Function] | [Field] | [Enum_Field]
 
-        # calculate the subblocks's padding
+        # run hook for padding
         assign_padding, comment_padding = self._calc_subblocks_padding(subblocks)
         if assign_padding > 0:
             self._field_assign_padding = assign_padding + self._option.indent
@@ -495,7 +494,8 @@ class ThriftFormatter(PureThriftFormatter):
         assert len(comments) <= 1
         if comments:
             self._padding(self._field_comment_padding, ' ')
-            self._append(' ')
+            self._append(' ')  # TODO: check if this need move as self._field_comment_padding += 1
+            # TODO: fix //a type comment
             self._append(comments[0].text.strip())
             self._push('')
             self._last_token_index = comments[0].tokenIndex
