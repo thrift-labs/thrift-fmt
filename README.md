@@ -98,6 +98,10 @@ struct Work {
 2. fix //a comment
 3. better code
 4. other language ?
+5. support function default add new line, function remove list sep
+6. support indent for /* */ multi line comment
+7. support tight map/list define ?
+8. any other featur ?
 
 ## Dev
 
