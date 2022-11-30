@@ -1,13 +1,13 @@
 [project]
 name = "thrift-fmt"
-version = "0.2.8"
+version = "0.2.9"
 description = "formart thrift file"
 authors = [
     {name = "alingse", email = "alingse@foxmail.com"},
 ]
 dependencies = [
     "click>=8.1.3",
-    "thrift-parser>=1.0.4",
+    "thrift-parser>=1.0.5",
 ]
 requires-python = ">=3.7"
 readme = "README.md"
