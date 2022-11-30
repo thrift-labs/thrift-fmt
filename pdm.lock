@@ -1,7 +1,7 @@
 [[package]]
 name = "antlr4-python3-runtime"
-version = "4.10"
-summary = "ANTLR 4.10 runtime for Python 2.7.12"
+version = "4.11.1"
+summary = "ANTLR 4.11.1 runtime for Python 3"
 
 [[package]]
 name = "atomicwrites"
@@ -124,11 +124,11 @@ dependencies = [
 
 [[package]]
 name = "thrift-parser"
-version = "1.0.5"
+version = "1.0.6"
 requires_python = ">=3.7"
 summary = "a thrift parser (antlr4)"
 dependencies = [
-    "antlr4-python3-runtime>=4.10",
+    "antlr4-python3-runtime>=4.11.1",
 ]
 
 [[package]]
@@ -151,11 +151,12 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:50401d4c813dc6fb112b3cee193052e03366411d33cdd162f84561867f8de787"
+content_hash = "sha256:9858e970abab1af1088a1fe2684574df29fa22380f9aefd542ab4d2eaf59a1df"
 
 [metadata.files]
-"antlr4-python3-runtime 4.10" = [
-    {url = "https://files.pythonhosted.org/packages/4e/cc/f268dcff9983d26d68eeadd43a05174901e19d75f9387939197a95deacfc/antlr4-python3-runtime-4.10.tar.gz", hash = "sha256:061a49bc72ae05a35d9b61c0ba0ac36c0397708819f02fbfb20a80e47d287a1b"},
+"antlr4-python3-runtime 4.11.1" = [
+    {url = "https://files.pythonhosted.org/packages/b6/3a/4f2e9d67277cc255a17a34c1b54e02d939ca5991bc596dee3d63e587e512/antlr4_python3_runtime-4.11.1-py3-none-any.whl", hash = "sha256:ff1954eda1ca9072c02bf500387d0c86cb549bef4dbb3b64f39468b547ec5f6b"},
+    {url = "https://files.pythonhosted.org/packages/e0/64/c548678120cccf784f555972ed37cedcf4f026abeec30ab0340c3af4ea07/antlr4-python3-runtime-4.11.1.tar.gz", hash = "sha256:a53de701312f9bdacc5258a6872cd6c62b90d3a90ae25e494026f76267333b60"},
 ]
 "atomicwrites 1.4.1" = [
     {url = "https://files.pythonhosted.org/packages/87/c6/53da25344e3e3a9c01095a89f16dbcda021c609ddb42dd6d7c0528236fb2/atomicwrites-1.4.1.tar.gz", hash = "sha256:81b2c9071a49367a7f770170e5eec8cb66567cfbbc8c73d20ce5ca4a8d71cf11"},
@@ -216,9 +217,9 @@ content_hash = "sha256:50401d4c813dc6fb112b3cee193052e03366411d33cdd162f84561867
     {url = "https://files.pythonhosted.org/packages/4e/1f/34657c6ac56f3c58df650ba41f8ffb2620281ead8e11bcdc7db63cf72a78/pytest-7.1.2.tar.gz", hash = "sha256:a06a0425453864a270bc45e71f783330a7428defb4230fb5e6a731fde06ecd45"},
     {url = "https://files.pythonhosted.org/packages/fb/d0/bae533985f2338c5d02184b4a7083b819f6b3fc101da792e0d96e6e5299d/pytest-7.1.2-py3-none-any.whl", hash = "sha256:13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c"},
 ]
-"thrift-parser 1.0.5" = [
-    {url = "https://files.pythonhosted.org/packages/72/c0/8f4e94cff13edb5a7530385b4d2fcd8b32ea619a4a7a4bb78d12355934f9/thrift-parser-1.0.5.tar.gz", hash = "sha256:7bc74f53fee0c192c0531e9106efeb42da6b2f1b25ccca06b618e16dcd3de97a"},
-    {url = "https://files.pythonhosted.org/packages/ab/b5/f0fa1f1b6840ffa2f75889b1994155cb264831f410c1940b624ca8da8591/thrift_parser-1.0.5-py3-none-any.whl", hash = "sha256:6194ac74f323559cb325a9618821d59ee45ae82098d28965340af713edc828e3"},
+"thrift-parser 1.0.6" = [
+    {url = "https://files.pythonhosted.org/packages/32/c7/0d2da442aa06f53e963586032d6031633bcfa51a0a2edc18577237138c88/thrift-parser-1.0.6.tar.gz", hash = "sha256:107e3bb0f70ede7b853f3a6268a39aa73eb54cc8062f0631c882a1282da339f1"},
+    {url = "https://files.pythonhosted.org/packages/fa/a6/17d7f6cefecdcbb6e5a8de7f7534aaf57b1a737bc0230cabb20894e7cd52/thrift_parser-1.0.6-py3-none-any.whl", hash = "sha256:980c3e699f726cf1592a54e5a0fa942bd05f067fc9a2ad70afcf48ff9330be2e"},
 ]
 "tomli 2.0.1" = [
     {url = "https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
