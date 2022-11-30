@@ -124,7 +124,7 @@ dependencies = [
 
 [[package]]
 name = "thrift-parser"
-version = "1.0.4"
+version = "1.0.5"
 requires_python = ">=3.7"
 summary = "a thrift parser (antlr4)"
 dependencies = [
@@ -151,7 +151,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.0"
-content_hash = "sha256:5f8361550bf6c951f732822bd74418fed022a98b1086db9fda7c27ccdba21322"
+content_hash = "sha256:50401d4c813dc6fb112b3cee193052e03366411d33cdd162f84561867f8de787"
 
 [metadata.files]
 "antlr4-python3-runtime 4.10" = [
@@ -216,9 +216,9 @@ content_hash = "sha256:5f8361550bf6c951f732822bd74418fed022a98b1086db9fda7c27ccd
     {url = "https://files.pythonhosted.org/packages/4e/1f/34657c6ac56f3c58df650ba41f8ffb2620281ead8e11bcdc7db63cf72a78/pytest-7.1.2.tar.gz", hash = "sha256:a06a0425453864a270bc45e71f783330a7428defb4230fb5e6a731fde06ecd45"},
     {url = "https://files.pythonhosted.org/packages/fb/d0/bae533985f2338c5d02184b4a7083b819f6b3fc101da792e0d96e6e5299d/pytest-7.1.2-py3-none-any.whl", hash = "sha256:13d0e3ccfc2b6e26be000cb6568c832ba67ba32e719443bfe725814d3c42433c"},
 ]
-"thrift-parser 1.0.4" = [
-    {url = "https://files.pythonhosted.org/packages/04/65/787ddd461623344a972e0a669ddb999ca18b23a4d33d1d288b48d242a12f/thrift-parser-1.0.4.tar.gz", hash = "sha256:72ecbb3755d1f36ff031b376cabf213f815d01519dbac834ed794e839e788cf7"},
-    {url = "https://files.pythonhosted.org/packages/56/ef/1ec231fba6b2c6280491e8e263c7c552b8be0ac5b7f37952297e9322e7bf/thrift_parser-1.0.4-py3-none-any.whl", hash = "sha256:fdb079dca1c732a1a26cb204dd18dde0a90cda78e8b4461e0eefbc6da7726fef"},
+"thrift-parser 1.0.5" = [
+    {url = "https://files.pythonhosted.org/packages/72/c0/8f4e94cff13edb5a7530385b4d2fcd8b32ea619a4a7a4bb78d12355934f9/thrift-parser-1.0.5.tar.gz", hash = "sha256:7bc74f53fee0c192c0531e9106efeb42da6b2f1b25ccca06b618e16dcd3de97a"},
+    {url = "https://files.pythonhosted.org/packages/ab/b5/f0fa1f1b6840ffa2f75889b1994155cb264831f410c1940b624ca8da8591/thrift_parser-1.0.5-py3-none-any.whl", hash = "sha256:6194ac74f323559cb325a9618821d59ee45ae82098d28965340af713edc828e3"},
 ]
 "tomli 2.0.1" = [
     {url = "https://files.pythonhosted.org/packages/97/75/10a9ebee3fd790d20926a90a2547f0bf78f371b2f13aa822c759680ca7b9/tomli-2.0.1-py3-none-any.whl", hash = "sha256:939de3e7a6161af0c887ef91b7d41a53e7c5a1ca976325f429cb46ea9bc30ecc"},
