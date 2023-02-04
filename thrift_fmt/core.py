@@ -15,13 +15,14 @@ from thrift_parser.ThriftParser import ThriftParser
 class Option(object):
     DEFAULT_INDENT: int = 4
 
-    def __init__(self, patch :bool = True, comment :bool = True, indent :Optional[int] = None, assign_align: bool=False):
+    def __init__(self, patch :bool = True, comment :bool = True, indent :Optional[int] = None, field_align: bool=False):
         self.patch: bool = patch
         self.comment: bool = comment
         self.indent: int = self.DEFAULT_INDENT
         if indent and indent > 0:
             self.indent = indent
-        self.assign_align: bool = assign_align
+        self.field_align: bool = field_align
+
 
 class PureThriftFormatter(object):
 
@@ -383,7 +384,7 @@ class ThriftFormatter(PureThriftFormatter):
         comment_padding = 0
 
         # only field is FieldContext or Enum_fieldContext need check for assign_padding
-        if self._option.assign_align and self._is_field_or_enum_field(subblocks[0]):
+        if self._option.field_align and self._is_field_or_enum_field(subblocks[0]):
             '''
                 field: '1: required i32 number_a = 0,'
                 assign_padding:   max(left)
@@ -511,7 +512,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._line_comments(node)
 
         # add field assign padding
-        if self._option.assign_align and self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
+        if self._option.field_align and self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
             self._padding(self._field_assign_padding, ' ')
 
         super().TerminalNodeImpl(node)
