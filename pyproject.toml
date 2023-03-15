@@ -1,6 +1,6 @@
 [project]
 name = "thrift-fmt"
-version = "0.2.9"
+version = "0.3.0a0"
 description = "formart thrift file"
 authors = [
     {name = "alingse", email = "alingse@foxmail.com"},
