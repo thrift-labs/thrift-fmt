@@ -237,22 +237,20 @@ class PureThriftFormatter(object):
     FieldContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Function_Context = _gen_inline_Context(
-        tight_fn=lambda i, n: any(
-            PureThriftFormatter._is_token(n, '('),
-            PureThriftFormatter._is_token(n, ')'),
-            PureThriftFormatter._is_token(n.parent.children[i-1], '('),
-            isinstance(n, ThriftParser.List_separatorContext),
-        )
+        tight_fn=lambda i, n:
+            PureThriftFormatter._is_token(n, '(') or
+            PureThriftFormatter._is_token(n, ')') or
+            PureThriftFormatter._is_token(n.parent.children[i-1], '(') or
+            isinstance(n, ThriftParser.List_separatorContext)
     )
     OnewayContext = _gen_inline_Context()
     Function_typeContext = _gen_inline_Context()
     Throws_listContext = _gen_inline_Context(
-        tight_fn=lambda i, n: any(
-            PureThriftFormatter._is_token(n, '('),
-            PureThriftFormatter._is_token(n, ')'),
-            PureThriftFormatter._is_token(n.parent.children[i-1], '('),
-            isinstance(n, ThriftParser.List_separatorContext),
-        )
+        tight_fn=lambda i, n:
+            PureThriftFormatter._is_token(n, '(') or
+            PureThriftFormatter._is_token(n, ')') or
+            PureThriftFormatter._is_token(n.parent.children[i-1], '(') or
+            isinstance(n, ThriftParser.List_separatorContext)
     )
     Type_annotationsContext = _gen_inline_Context()
     Type_annotationContext = _gen_inline_Context(
