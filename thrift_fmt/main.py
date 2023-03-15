@@ -1,7 +1,7 @@
 import click
 import io
 import pathlib
-from typing import Optional
+from typing import Optional, List
 
 from .core import ThriftData, ThriftFormatter, Option
 
@@ -37,11 +37,11 @@ def main(indent: Optional[int], remove_comment: Optional[bool],
          recursive: Optional[bool], write: Optional[bool],
          path: str):
 
-    files :list[str] = []
+    files: List[str] = []
 
     p = pathlib.Path(path)
     if p.is_file():
-        files = [file]
+        files = [p]
     elif p.is_dir():
         if recursive:
             files = p.glob('**/*.thrift')
