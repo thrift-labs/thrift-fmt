@@ -1,0 +1,1 @@
+namespace xsd test (uri = 'http://thrift.apache.org/ns/ThriftTest', test = 1)
