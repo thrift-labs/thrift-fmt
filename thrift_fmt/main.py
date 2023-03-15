@@ -13,9 +13,9 @@ from .core import ThriftData, ThriftFormatter, Option
 @click.option(
     '--remove-comment', is_flag=True, default=False, help='remove all comment')
 @click.option(
-    '--patch-required', is_flag=True,  show_default=True, default=True, help='patch field\'s missed required flag')
+    '--patch-required', is_flag=True, show_default=True, default=True, help='patch field\'s missed required flag')
 @click.option(
-    '--patch-sep', is_flag=True,  show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
+    '--patch-sep', is_flag=True, show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
 @click.option(
     '--align-assign', is_flag=True, show_default=True, default=True, help='align struct/enum/union/exception\'s field by assign `=`')
 @click.option(

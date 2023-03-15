@@ -15,8 +15,8 @@ from thrift_parser.ThriftParser import ThriftParser
 class Option(object):
     DEFAULT_INDENT: int = 4
 
-    def __init__(self, patch_sep :bool = True, patch_required :bool = True,
-                 keep_comment :bool = True, indent :Optional[int] = None,
+    def __init__(self, patch_sep: bool = True, patch_required: bool = True,
+                 keep_comment: bool = True, indent: Optional[int] = None,
                  align_assign: bool = True):
 
         self.patch_sep: bool = patch_sep
@@ -39,7 +39,7 @@ class Option(object):
 class PureThriftFormatter(object):
 
     def __init__(self):
-        self._option : Option = Option()
+        self._option: Option = Option()
 
         self._newline_c: int = 0
         self._indent_s: str = ''
@@ -57,7 +57,7 @@ class PureThriftFormatter(object):
 
     def _push(self, text: str):
         if self._newline_c > 0:
-            self._out.write('\n'*self._newline_c)
+            self._out.write('\n' * self._newline_c)
             self._newline_c = 0
         self._out.write(text)
 
@@ -87,7 +87,7 @@ class PureThriftFormatter(object):
     @staticmethod
     def _get_repeat_children(nodes: List[ParseTree], cls: typing.Type[ParseTree]) \
             -> Tuple[List[ParseTree], List[ParseTree]]:
-        children:  List[ParseTree] = []
+        children: List[ParseTree] = []
         for i, child in enumerate(nodes):
             if not isinstance(child, cls):
                 return children, nodes[i:]
@@ -237,20 +237,22 @@ class PureThriftFormatter(object):
     FieldContext = _gen_inline_Context(
         tight_fn=lambda _, n: isinstance(n, ThriftParser.List_separatorContext))
     Function_Context = _gen_inline_Context(
-        tight_fn=lambda i, n:
-            PureThriftFormatter._is_token(n, '(') or
-            PureThriftFormatter._is_token(n, ')') or
-            PureThriftFormatter._is_token(n.parent.children[i-1], '(') or
-            isinstance(n, ThriftParser.List_separatorContext)
+        tight_fn=lambda i, n: any(
+            PureThriftFormatter._is_token(n, '('),
+            PureThriftFormatter._is_token(n, ')'),
+            PureThriftFormatter._is_token(n.parent.children[i-1], '('),
+            isinstance(n, ThriftParser.List_separatorContext),
+        )
     )
     OnewayContext = _gen_inline_Context()
     Function_typeContext = _gen_inline_Context()
     Throws_listContext = _gen_inline_Context(
-        tight_fn=lambda i, n:
-            PureThriftFormatter._is_token(n, '(') or
-            PureThriftFormatter._is_token(n, ')') or
-            PureThriftFormatter._is_token(n.parent.children[i-1], '(') or
-            isinstance(n, ThriftParser.List_separatorContext)
+        tight_fn=lambda i, n: any(
+            PureThriftFormatter._is_token(n, '('),
+            PureThriftFormatter._is_token(n, ')'),
+            PureThriftFormatter._is_token(n.parent.children[i-1], '('),
+            isinstance(n, ThriftParser.List_separatorContext),
+        )
     )
     Type_annotationsContext = _gen_inline_Context()
     Type_annotationContext = _gen_inline_Context(
@@ -422,8 +424,7 @@ class ThriftFormatter(PureThriftFormatter):
                 comment_padding += 1
         else:
             for subblock in subblocks:
-                comment_padding = max(comment_padding,
-                    len(PureThriftFormatter().format_node(subblock)))
+                comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
 
         return assign_padding, comment_padding
 
@@ -448,7 +449,7 @@ class ThriftFormatter(PureThriftFormatter):
         cur = self._out.getvalue().rsplit('\n', 1)[-1]
         return cur
 
-    def _padding(self, padding: int, pad: str=' '):
+    def _padding(self, padding: int, pad: str = ' '):
         if padding <= 0:
             return
         cur = self._get_current_line()
