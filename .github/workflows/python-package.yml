@@ -40,4 +40,7 @@ jobs:
     - name: Test with Real
       run: |
         pdm run -v thrift-fmt --help
+        pdm run -v thrift-fmt ./tests/fixtures/simple.thrift
+        pdm run -v thrift-fmt -w ./tests/fixtures/simple.thrift
         pdm run -v thrift-fmt ./tests/fixtures
+        pdm run -v thrift-fmt -r ./tests
