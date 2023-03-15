@@ -11,7 +11,10 @@ def run_fmt(file, patch=True):
     fin = os.path.abspath(os.path.join(TEST_DIR, 'fixtures', file))
     data = ThriftData.from_file(fin)
     fmt = ThriftFormatter(data)
-    fmt.option(Option(comment=True, patch=True, indent=4))
+    opt = Option(keep_comment=True, patch_required=True, patch_sep=True, indent=4, align_assign=False)
+    if not patch:
+        opt.disble_patch()
+    fmt.option(opt)
     return fmt.format()
 
 
@@ -100,7 +103,9 @@ def test_from_string():
 
     # thrift = ThriftData.from_file('simple.thrift')
     thrift = ThriftData.from_str(data)
-    out = ThriftFormatter(thrift).format()
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(align_assign=False))
+    out = fmt.format()
     assert out == '''
 include "shared.thrift" // a
 
@@ -127,7 +132,7 @@ struct Work {
 
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
-    fmt.option(Option(assign_align=True))
+    fmt.option(Option(align_assign=True))
     out = fmt.format()
     assert out == '''struct Work {
     1: required i32 number_a = 0, // hello
@@ -149,7 +154,7 @@ enum Numberz
 
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
-    fmt.option(Option(assign_align=True, indent=2))
+    fmt.option(Option(align_assign=True, indent=2))
     out = fmt.format()
     assert out == '''enum Numberz {
   ONE   = 1,
@@ -171,7 +176,7 @@ def test_field_assign_align_with_complex():
 
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
-    fmt.option(Option(assign_align=True, indent=4, patch=False))
+    fmt.option(Option(align_assign=True, indent=4, patch_required=False, patch_sep=False))
     out = fmt.format()
     assert out == '''enum NUM {
     ONE     = 1,
@@ -190,7 +195,7 @@ def test_field_assign_align_with_complex2():
 
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
-    fmt.option(Option(assign_align=True, indent=4, patch=False))
+    fmt.option(Option(align_assign=True, indent=4, patch_sep=False))
     out = fmt.format()
     assert out == '''enum NUM {
     ONE     = 1,

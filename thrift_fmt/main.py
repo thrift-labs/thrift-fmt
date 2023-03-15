@@ -8,37 +8,60 @@ from .core import ThriftData, ThriftFormatter, Option
 
 @click.command()
 @click.option(
-    '-d', '--dir', type=click.Path(exists=True, file_okay=False, dir_okay=True))
+    '-i', '--indent', show_default=True, type=click.IntRange(min=0), default=Option.DEFAULT_INDENT,
+    help='sub field indent of struct/enum/service/union/exception')
+@click.option(
+    '--remove-comment', is_flag=True, default=False, help='remove all comment')
+@click.option(
+    '--patch-required', is_flag=True,  show_default=True, default=True, help='patch field\'s missed required flag')
+@click.option(
+    '--patch-sep', is_flag=True,  show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
+@click.option(
+    '--align-assign', is_flag=True, show_default=True, default=True, help='align struct/enum/union/exception\'s field by assign `=`')
+@click.option(
+    '--no-patch', is_flag=True, default=False, help='disable all --patch-xx flag')
+@click.option(
+    '--no-align', is_flag=True, default=False, help='disable all --align-xx flag')
+@click.option(
+    '-r', '--recursive', is_flag=True, default=False, help='If `path` is dir, will recursive format all thrift files')
 @click.option(
     '-w', '--write', is_flag=True,
-    help='Write to file instead of stdout, default true when dir was set')
-@click.option(
-    '-i', '--indent', type=click.IntRange(min=0), default=None,
-    help='sub field indent of struct/enum/service/union/exception, default {}'.format(Option.DEFAULT_INDENT))
-@click.option(
-    '--no-patch', is_flag=True, help='disable field patch about comma and required flag')
-@click.option(
-    '--remove-comment', is_flag=True, help='remove all comment')
-@click.option(
-    '--no-assign-align', is_flag=True, help='disable field assign align')
+    help='If `path` is file, will write to file instead of stdout. default true when `path` is a dir')
 @click.argument(
-    'file',
-    type=click.Path(exists=True, file_okay=True, dir_okay=False), required=False)
-def main(dir, write: Optional[bool], indent: Optional[int], no_patch: Optional[bool], remove_comment: Optional[bool], no_assign_align: Optional[bool], file):
-    if not dir and not file:
-        raise click.ClickException('thrift file or dir is required')
+    'path',
+    type=click.Path(exists=True, file_okay=True, dir_okay=True), required=True)
+def main(indent: Optional[int], remove_comment: Optional[bool],
+         patch_required: Optional[bool], patch_sep: Optional[bool],
+         align_assign: Optional[bool],
+         no_patch: Optional[bool], no_align: Optional[bool],
+         recursive: Optional[bool], write: Optional[bool],
+         path: str):
 
-    if file:
+    files :list[str] = []
+
+    p = pathlib.Path(path)
+    if p.is_file():
         files = [file]
-    else:
-        files = pathlib.Path(dir).glob('*.thrift')
+    elif p.is_dir():
+        if recursive:
+            files = p.glob('**/*.thrift')
+        else:
+            files = p.glob('*.thrift')
         write = True
+    else:
+        raise click.ClickException('path must be file or dir')
 
     option = Option(
-        patch=not no_patch,
-        comment=not remove_comment,
+        patch_sep=patch_sep,
+        patch_required=patch_required,
+        keep_comment=not remove_comment,
         indent=indent,
-        assign_align=not no_assign_align)
+        align_assign=align_assign)
+
+    if no_patch:
+        option.disble_patch()
+    if no_align:
+        option.disble_align()
 
     for file in files:
         data = ThriftData.from_file(file)

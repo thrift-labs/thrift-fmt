@@ -15,13 +15,26 @@ from thrift_parser.ThriftParser import ThriftParser
 class Option(object):
     DEFAULT_INDENT: int = 4
 
-    def __init__(self, patch :bool = True, comment :bool = True, indent :Optional[int] = None, assign_align: bool=False):
-        self.patch: bool = patch
-        self.comment: bool = comment
+    def __init__(self, patch_sep :bool = True, patch_required :bool = True,
+                 keep_comment :bool = True, indent :Optional[int] = None,
+                 align_assign: bool = True):
+
+        self.patch_sep: bool = patch_sep
+        self.patch_required: bool = patch_required
+        self.keep_comment: bool = keep_comment
         self.indent: int = self.DEFAULT_INDENT
         if indent and indent > 0:
             self.indent = indent
-        self.assign_align: bool = assign_align
+
+        self.align_assign: bool = align_assign
+
+    def disble_patch(self):
+        self.patch_required = False
+        self.patch_sep = False
+
+    def disble_align(self):
+        self.align_assign = False
+
 
 class PureThriftFormatter(object):
 
@@ -267,16 +280,17 @@ class ThriftFormatter(PureThriftFormatter):
         self._last_token_index: int = -1
 
     def format(self) -> str:
-        if self._option.patch:
-            self.patch()
-
+        self.patch()
         return self.format_node(self._document)
 
     def patch(self):
         self._document.parent = None
-        self.walk_node(self._document, self._patch_field_req)
-        self.walk_node(self._document, self._patch_field_list_separator)
-        self.walk_node(self._document, self._patch_remove_last_list_separator)
+        if self._option.patch_required:
+            self.walk_node(self._document, self._patch_field_req)
+
+        if self._option.patch_sep:
+            self.walk_node(self._document, self._patch_field_list_separator)
+            self.walk_node(self._document, self._patch_remove_last_list_separator)
 
     @staticmethod
     def _patch_field_req(node: ParseTree):
@@ -383,7 +397,7 @@ class ThriftFormatter(PureThriftFormatter):
         comment_padding = 0
 
         # only field is FieldContext or Enum_fieldContext need check for assign_padding
-        if self._option.assign_align and self._is_field_or_enum_field(subblocks[0]):
+        if self._option.align_assign and self._is_field_or_enum_field(subblocks[0]):
             '''
                 field: '1: required i32 number_a = 0,'
                 assign_padding:   max(left)
@@ -443,7 +457,7 @@ class ThriftFormatter(PureThriftFormatter):
             self._append(pad * padding)
 
     def _line_comments(self, node: TerminalNodeImpl):
-        if not self._option.comment:
+        if not self._option.keep_comment:
             return
 
         if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
@@ -476,7 +490,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._last_token_index = node.symbol.tokenIndex
 
     def _tail_comment(self):
-        if not self._option.comment:
+        if not self._option.keep_comment:
             return
 
         if self._last_token_index == -1:
@@ -500,6 +514,10 @@ class ThriftFormatter(PureThriftFormatter):
             self._push('')
             self._last_token_index = comments[0].tokenIndex
 
+    def _align_assign(self, node: TerminalNodeImpl):
+        if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
+            self._padding(self._field_assign_padding, ' ')
+
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
 
@@ -511,7 +529,7 @@ class ThriftFormatter(PureThriftFormatter):
         self._line_comments(node)
 
         # add field assign padding
-        if self._option.assign_align and self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
-            self._padding(self._field_assign_padding, ' ')
+        if self._option.align_assign:
+            self._align_assign(node)
 
         super().TerminalNodeImpl(node)
