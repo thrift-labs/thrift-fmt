@@ -1,7 +1,7 @@
 import click
 import io
 import pathlib
-from typing import Optional
+from typing import Optional, List
 
 from .core import ThriftData, ThriftFormatter, Option
 
@@ -13,9 +13,9 @@ from .core import ThriftData, ThriftFormatter, Option
 @click.option(
     '--remove-comment', is_flag=True, default=False, help='remove all comment')
 @click.option(
-    '--patch-required', is_flag=True,  show_default=True, default=True, help='patch field\'s missed required flag')
+    '--patch-required', is_flag=True, show_default=True, default=True, help='patch field\'s missed required flag')
 @click.option(
-    '--patch-sep', is_flag=True,  show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
+    '--patch-sep', is_flag=True, show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
 @click.option(
     '--align-assign', is_flag=True, show_default=True, default=True, help='align struct/enum/union/exception\'s field by assign `=`')
 @click.option(
@@ -37,11 +37,11 @@ def main(indent: Optional[int], remove_comment: Optional[bool],
          recursive: Optional[bool], write: Optional[bool],
          path: str):
 
-    files :list[str] = []
+    files: List[str] = []
 
     p = pathlib.Path(path)
     if p.is_file():
-        files = [file]
+        files = [p]
     elif p.is_dir():
         if recursive:
             files = p.glob('**/*.thrift')
