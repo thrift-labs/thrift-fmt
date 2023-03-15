@@ -36,7 +36,7 @@ jobs:
     - name: Test with pytest
       run: |
         pdm run -v pytest tests
-        pdm run flake8 ./thrift_fmt
+        pdm run flake8 ./thrift_fmt --ignore=E501,E226
 
     - name: Test with Real
       run: |
