@@ -375,6 +375,12 @@ class ThriftFormatter(PureThriftFormatter):
     def _is_field_or_enum_field(node: ParseTree):
         return isinstance(node, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext))
 
+    def _calc_subblocks_comment_padding(self, subblocks: List[ParseTree]):
+        comment_padding = 0
+        for subblock in subblocks:
+            comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
+        return comment_padding
+
     @staticmethod
     def _split_field_by_assign(node: ParseTree):
         '''
@@ -429,31 +435,22 @@ class ThriftFormatter(PureThriftFormatter):
             comment_padding += 1
         return assign_padding, comment_padding
 
-    def _calc_subblocks_comment_padding(self, subblocks: List[ParseTree]):
-        comment_padding = 0
-        for subblock in subblocks:
-            comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
-        return comment_padding
-
     def _calc_subblocks_align_field_padding(self, subblocks: List[ParseTree]):
-        '''
-def calculate_levels(strings):
-    levels = {}
-    for string in strings:
-        for i in range(len(string)-1):
-            if string[i] not in levels:
-                # 如果当前字母未出现过，初始层级为0
-                levels[string[i]] = 0
-            if string[i+1] not in levels:
-                levels[string[i+1]] = 0
-            # 更新字母的层级为相邻字母中较大的层级+1
-            levels[string[i+1]] = max(levels[string[i+1]], levels[string[i]]+1)
-    return levels
-
-strings = ['ABCD', 'BCDE', 'BDEFG', 'AEFGH']
-levels = calculate_levels(strings)
-print(levels)
-        '''
+        if not subblocks:
+            return (0, 0)
+        if not self._is_field_or_enum_field(subblocks[0]):
+            return (0, 0)
+        levels = {}
+        for subblock in subblocks:
+            for i in range(len(subblock.children) -1):
+                a = subblock.children[i].__class__
+                b = subblock.children[i+1].__class__
+                if a not in levels:
+                    levels[a] = 0
+                if b not in levels:
+                    levels[b] = 0
+                levels[b] = max(levels[b], levels[a] + 1)
+        return {}, 0
 
     def _padding_align_assign(self, node: TerminalNodeImpl):
         if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
@@ -469,7 +466,7 @@ print(levels)
         if self._option.is_align:
             if self._option.align_field:
                 padding_map, comment_padding = self._calc_subblocks_align_field_padding(subblocks)
-                self._field_comment_padding = self._padding_add_indent(padding)
+                self._field_comment_padding = self._padding_add_indent(comment_padding)
                 self._field_padding_map = padding_map
 
             elif self._option.align_assign:
