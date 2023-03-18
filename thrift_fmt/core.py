@@ -281,7 +281,7 @@ class ThriftFormatter(PureThriftFormatter):
 
         self._field_assign_padding: int = 0
         self._field_comment_padding: int = 0
-        self._field_padding_map: Dict[str, int] = 0
+        self._field_padding_map: Dict[str, int] = {}
 
     def _padding_add_indent(self, padding: int):
         if padding > 0:
@@ -435,22 +435,55 @@ class ThriftFormatter(PureThriftFormatter):
             comment_padding += 1
         return assign_padding, comment_padding
 
+    def _get_field_child_name(self, node: ParseTree) -> str:
+        if self._is_token(node, '='):
+            return '='
+        return node.__class__.__name__
+
     def _calc_subblocks_align_field_padding(self, subblocks: List[ParseTree]):
         if not subblocks:
-            return (0, 0)
+            return {}, 0
         if not self._is_field_or_enum_field(subblocks[0]):
-            return (0, 0)
-        levels = {}
+            return {}, 0
+
+        name_levels = {}
         for subblock in subblocks:
             for i in range(len(subblock.children) -1):
-                a = subblock.children[i].__class__
-                b = subblock.children[i+1].__class__
-                if a not in levels:
-                    levels[a] = 0
-                if b not in levels:
-                    levels[b] = 0
-                levels[b] = max(levels[b], levels[a] + 1)
-        return {}, 0
+                a = self._get_field_child_name(subblock.children[i])
+                b = self._get_field_child_name(subblock.children[i+1])
+                if a not in name_levels:
+                    name_levels[a] = 0
+                if b not in name_levels:
+                    name_levels[b] = 0
+                name_levels[b] = max(name_levels[b], name_levels[a] + 1)
+
+        # check levles 连续
+        if max(name_levels.values()) + 1 != len(name_levels):
+            return {}, 0
+
+        level_length = {}
+        for subblock in subblocks:
+            for node in subblock.children:
+                level = name_levels[self._get_field_child_name(node)]
+                length = len(PureThriftFormatter().format_node(node))
+                level_length[level] = max(level_length.get(level, 0), length)
+
+        level_padding = {}
+        for level, length in level_length.items():
+            level_padding[level] = length + level
+            for i in range(0, level):
+                level_padding[level] += level_length[i]
+            level_padding[level] += level
+
+        padding = {}
+        for name in name_levels:
+            padding[name] = level_padding[name_levels[name]]
+
+        print(name_levels)
+        print(level_length)
+        print(level_padding)
+        print(padding)
+        return padding, 0
 
     def _padding_align_assign(self, node: TerminalNodeImpl):
         if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
@@ -459,15 +492,27 @@ class ThriftFormatter(PureThriftFormatter):
     def _padding_align_field(self, node: TerminalNodeImpl):
         if not self._is_field_or_enum_field(node.parent):
             return
+        import pdb
+        pdb.set_trace()
+        if not self._field_padding_map:
+            return
+        name = self._get_field_child_name(node)
+        padding = self._field_padding_map.get(name, 0)
+        self._padding(padding, ' ')
+
+    def _padding_align(self, node: TerminalNodeImpl):
+        if self._option.align_field:
+            self._padding_align_field(node)
+        if self._option.align_assign:
+            self._padding_align_assign(node)
 
     def before_subblocks_hook(self, subblocks: List[ParseTree]):
         # subblocks : [Function] | [Field] | [Enum_Field]
-        # check padding
         if self._option.is_align:
             if self._option.align_field:
                 padding_map, comment_padding = self._calc_subblocks_align_field_padding(subblocks)
                 self._field_comment_padding = self._padding_add_indent(comment_padding)
-                self._field_padding_map = padding_map
+                self._field_padding_map = {key: self._padding_add_indent(value) for key, value in padding_map.items()}
 
             elif self._option.align_assign:
                 # assign align && comment
@@ -483,11 +528,10 @@ class ThriftFormatter(PureThriftFormatter):
     def after_subblocks_hook(self, _: List[ParseTree]):
         self._field_assign_padding = 0
         self._field_comment_padding = 0
+        self._field_padding_map = {}
 
     def after_block_node_hook(self, _: ParseTree):
         self._tail_comment()
-
-#    : field_id? field_req? field_type IDENTIFIER ('=' const_value)? type_annotations? list_separator?
 
     def _get_current_line(self):
         cur = self._out.getvalue().rsplit('\n', 1)[-1]
@@ -558,12 +602,6 @@ class ThriftFormatter(PureThriftFormatter):
             self._append(comments[0].text.strip())
             self._push('')
             self._last_token_index = comments[0].tokenIndex
-
-    def _padding_align(self, node: TerminalNodeImpl):
-        if self._option.align_field:
-            self._padding_align_field(node)
-        if self._option.align_assign:
-            self._padding_align_assign(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
