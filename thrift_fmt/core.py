@@ -2,7 +2,7 @@ from __future__ import annotations
 import copy
 import io
 import typing
-from typing import List, Optional, Callable, Tuple
+from typing import List, Optional, Callable, Tuple, Dict
 
 from antlr4.Token import CommonToken
 from antlr4.tree.Tree import TerminalNodeImpl
@@ -277,9 +277,16 @@ class ThriftFormatter(PureThriftFormatter):
         self._data: ThriftData = data
         self._document: ThriftParser.DocumentContext = data.document
 
+        self._last_token_index: int = -1
+
         self._field_assign_padding: int = 0
         self._field_comment_padding: int = 0
-        self._last_token_index: int = -1
+        self._field_padding_map: Dict[str, int] = 0
+
+    def _padding_add_indent(self, padding: int):
+        if padding > 0:
+            return padding + self._option.indent
+        return 0
 
     def format(self) -> str:
         self.patch()
@@ -391,7 +398,7 @@ class ThriftFormatter(PureThriftFormatter):
         right.children = node.children[i:]
         return left, right
 
-    def _calc_subblocks_padding(self, subblocks: List[ParseTree]) -> Tuple[int, int]:
+    def _calc_subblocks_align_assign_padding(self, subblocks: List[ParseTree]) -> Tuple[int, int]:
         if not subblocks:
             return (0, 0)
         if not self._is_field_or_enum_field(subblocks[0]):
@@ -428,7 +435,7 @@ class ThriftFormatter(PureThriftFormatter):
             comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
         return comment_padding
 
-    def _calc_field_align_padding(self, ):
+    def _calc_subblocks_align_field_padding(self, subblocks: List[ParseTree]):
         '''
 def calculate_levels(strings):
     levels = {}
@@ -448,23 +455,33 @@ levels = calculate_levels(strings)
 print(levels)
         '''
 
+    def _padding_align_assign(self, node: TerminalNodeImpl):
+        if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
+            self._padding(self._field_assign_padding, ' ')
+
+    def _padding_align_field(self, node: TerminalNodeImpl):
+        if not self._is_field_or_enum_field(node.parent):
+            return
+
     def before_subblocks_hook(self, subblocks: List[ParseTree]):
         # subblocks : [Function] | [Field] | [Enum_Field]
         # check padding
         if self._option.is_align:
-            if self._option.align_assign:
-                # assign align && comment
-                assign_padding, comment_padding = self._calc_subblocks_padding(subblocks)
-                if assign_padding > 0:
-                    self._field_assign_padding = assign_padding + self._option.indent
-                if comment_padding > 0:
-                    self._field_comment_padding = comment_padding + self._option.indent
+            if self._option.align_field:
+                padding_map, comment_padding = self._calc_subblocks_align_field_padding(subblocks)
+                self._field_comment_padding = self._padding_add_indent(padding)
+                self._field_padding_map = padding_map
 
-        elif self._option.keep_comment:
-            # only 4 comment
+            elif self._option.align_assign:
+                # assign align && comment
+                assign_padding, comment_padding = self._calc_subblocks_align_assign_padding(subblocks)
+                self._field_assign_padding = self._padding_add_indent(assign_padding)
+                self._field_comment_padding = self._padding_add_indent(comment_padding)
+
+        # clac for comment
+        if self._option.keep_comment and self._field_comment_padding == 0:
             padding = self._calc_subblocks_comment_padding(subblocks)
-            if padding > 0:
-                self._field_comment_padding = padding + self._option.indent
+            self._field_comment_padding = self._padding_add_indent(padding)
 
     def after_subblocks_hook(self, _: List[ParseTree]):
         self._field_assign_padding = 0
@@ -545,11 +562,9 @@ print(levels)
             self._push('')
             self._last_token_index = comments[0].tokenIndex
 
-    def _padding_align_assign(self, node: TerminalNodeImpl):
-        if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
-            self._padding(self._field_assign_padding, ' ')
-
     def _padding_align(self, node: TerminalNodeImpl):
+        if self._option.align_field:
+            self._padding_align_field(node)
         if self._option.align_assign:
             self._padding_align_assign(node)
 
