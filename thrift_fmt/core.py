@@ -17,7 +17,7 @@ class Option(object):
 
     def __init__(self, patch_sep: bool = True, patch_required: bool = True,
                  keep_comment: bool = True, indent: Optional[int] = None,
-                 align_assign: bool = True):
+                 align_assign: bool = True, align_field: bool = False):
 
         self.patch_sep: bool = patch_sep
         self.patch_required: bool = patch_required
@@ -27,13 +27,19 @@ class Option(object):
             self.indent = indent
 
         self.align_assign: bool = align_assign
+        self.align_field: bool = align_field
 
     def disble_patch(self):
         self.patch_required = False
         self.patch_sep = False
 
     def disble_align(self):
+        self.align_field = False
         self.align_assign = False
+
+    @property
+    def is_align(self):
+        return self.align_field or self.align_assign
 
 
 class PureThriftFormatter(object):
@@ -388,49 +394,77 @@ class ThriftFormatter(PureThriftFormatter):
     def _calc_subblocks_padding(self, subblocks: List[ParseTree]) -> Tuple[int, int]:
         if not subblocks:
             return (0, 0)
-
-        assign_padding = 0
-        comment_padding = 0
+        if not self._is_field_or_enum_field(subblocks[0]):
+            return (0, 0)
 
         # only field is FieldContext or Enum_fieldContext need check for assign_padding
-        if self._option.align_assign and self._is_field_or_enum_field(subblocks[0]):
-            '''
-                field: '1: required i32 number_a = 0,'
-                assign_padding:   max(left)
-                comment_padding:  max(left) + max(right) [+ 1]
-            '''
-            left_max_size = 0
-            right_max_size = 0
-            for field in subblocks:
-                left, right = self._split_field_by_assign(field)
-                left_max_size = max(left_max_size, len(PureThriftFormatter().format_node(left)))
-                right_max_size = max(right_max_size, len(PureThriftFormatter().format_node(right)))
+        '''
+            field: '1: required i32 number_a = 0,'
+            assign_padding:   max(left)
+            comment_padding:  max(left) + max(right) [+ 1]
+        '''
+        left_max_size = 0
+        right_max_size = 0
+        for field in subblocks:
+            left, right = self._split_field_by_assign(field)
+            left_max_size = max(left_max_size, len(PureThriftFormatter().format_node(left)))
+            right_max_size = max(right_max_size, len(PureThriftFormatter().format_node(right)))
 
-            # add extra for space or list sep
-            assign_padding = left_max_size + 1
-            comment_padding = left_max_size + right_max_size
-            '''
-                if it is not list sep, need add extra space
-                case 1 --> "1: bool a = true," ---> "1: bool a" + " " + "= true,"
-                case 2 --> "2: bool b," ---> "2: bool b" + "" + ","
-            '''
-            if right_max_size > 1:
-                comment_padding += 1
-        else:
-            for subblock in subblocks:
-                comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
-
+        # add extra for space or list sep
+        assign_padding = left_max_size + 1
+        comment_padding = left_max_size + right_max_size
+        '''
+            if it is not list sep, need add extra space
+            case 1 --> "1: bool a = true," ---> "1: bool a" + " " + "= true,"
+            case 2 --> "2: bool b," ---> "2: bool b" + "" + ","
+        '''
+        if right_max_size > 1:
+            comment_padding += 1
         return assign_padding, comment_padding
+
+    def _calc_subblocks_comment_padding(self, subblocks: List[ParseTree]):
+        comment_padding = 0
+        for subblock in subblocks:
+            comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
+        return comment_padding
+
+    def _calc_field_align_padding(self, ):
+        '''
+def calculate_levels(strings):
+    levels = {}
+    for string in strings:
+        for i in range(len(string)-1):
+            if string[i] not in levels:
+                # 如果当前字母未出现过，初始层级为0
+                levels[string[i]] = 0
+            if string[i+1] not in levels:
+                levels[string[i+1]] = 0
+            # 更新字母的层级为相邻字母中较大的层级+1
+            levels[string[i+1]] = max(levels[string[i+1]], levels[string[i]]+1)
+    return levels
+
+strings = ['ABCD', 'BCDE', 'BDEFG', 'AEFGH']
+levels = calculate_levels(strings)
+print(levels)
+        '''
 
     def before_subblocks_hook(self, subblocks: List[ParseTree]):
         # subblocks : [Function] | [Field] | [Enum_Field]
+        # check padding
+        if self._option.is_align:
+            if self._option.align_assign:
+                # assign align && comment
+                assign_padding, comment_padding = self._calc_subblocks_padding(subblocks)
+                if assign_padding > 0:
+                    self._field_assign_padding = assign_padding + self._option.indent
+                if comment_padding > 0:
+                    self._field_comment_padding = comment_padding + self._option.indent
 
-        # run hook for padding
-        assign_padding, comment_padding = self._calc_subblocks_padding(subblocks)
-        if assign_padding > 0:
-            self._field_assign_padding = assign_padding + self._option.indent
-        if comment_padding > 0:
-            self._field_comment_padding = comment_padding + self._option.indent
+        elif self._option.keep_comment:
+            # only 4 comment
+            padding = self._calc_subblocks_comment_padding(subblocks)
+            if padding > 0:
+                self._field_comment_padding = padding + self._option.indent
 
     def after_subblocks_hook(self, _: List[ParseTree]):
         self._field_assign_padding = 0
@@ -438,6 +472,8 @@ class ThriftFormatter(PureThriftFormatter):
 
     def after_block_node_hook(self, _: ParseTree):
         self._tail_comment()
+
+#    : field_id? field_req? field_type IDENTIFIER ('=' const_value)? type_annotations? list_separator?
 
     def _get_current_line(self):
         cur = self._out.getvalue().rsplit('\n', 1)[-1]
@@ -509,9 +545,13 @@ class ThriftFormatter(PureThriftFormatter):
             self._push('')
             self._last_token_index = comments[0].tokenIndex
 
-    def _align_assign(self, node: TerminalNodeImpl):
+    def _padding_align_assign(self, node: TerminalNodeImpl):
         if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
             self._padding(self._field_assign_padding, ' ')
+
+    def _padding_align(self, node: TerminalNodeImpl):
+        if self._option.align_assign:
+            self._padding_align_assign(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
@@ -523,8 +563,8 @@ class ThriftFormatter(PureThriftFormatter):
         # add abrove comments
         self._line_comments(node)
 
-        # add field assign padding
-        if self._option.align_assign:
-            self._align_assign(node)
+        # add field padding
+        if self._option.is_align:
+            self._padding_align(node)
 
         super().TerminalNodeImpl(node)
