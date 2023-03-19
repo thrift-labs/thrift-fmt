@@ -463,7 +463,7 @@ class ThriftFormatter(PureThriftFormatter):
 
         name_levels = {}
         for subblock in subblocks:
-            for i in range(len(subblock.children) -1):
+            for i in range(len(subblock.children)-1):
                 a = self._get_field_child_name(subblock.children[i])
                 b = self._get_field_child_name(subblock.children[i+1])
                 if a not in name_levels:
@@ -493,10 +493,6 @@ class ThriftFormatter(PureThriftFormatter):
         for name in name_levels:
             padding[name] = level_padding[name_levels[name]]
 
-        print(name_levels)
-        print(level_length)
-        print(level_padding)
-        print(padding)
         return padding, 0
 
     def _padding_align_assign(self, node: ParseTree):
@@ -510,8 +506,7 @@ class ThriftFormatter(PureThriftFormatter):
             return
         if not self._field_padding_map:
             return
-        import pdb
-        pdb.set_trace()
+
         name = self._get_field_child_name(node)
         padding = self._field_padding_map.get(name, 0)
         self._padding(padding, ' ')
@@ -526,8 +521,6 @@ class ThriftFormatter(PureThriftFormatter):
         # subblocks : [Function] | [Field] | [Enum_Field]
         if self._option.is_align:
             if self._option.align_field:
-                #import pdb
-                #pdb.set_trace()
                 padding_map, comment_padding = self._calc_subblocks_align_field_padding(subblocks)
                 self._field_comment_padding = self._padding_add_indent(comment_padding)
                 self._field_padding_map = {key: self._padding_add_indent(value) for key, value in padding_map.items()}
