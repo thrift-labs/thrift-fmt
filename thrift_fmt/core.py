@@ -473,7 +473,6 @@ class ThriftFormatter(PureThriftFormatter):
             level_padding[level] = length + level
             for i in range(0, level):
                 level_padding[level] += level_length[i]
-            level_padding[level] += level
 
         padding = {}
         for name in name_levels:
@@ -492,10 +491,10 @@ class ThriftFormatter(PureThriftFormatter):
     def _padding_align_field(self, node: TerminalNodeImpl):
         if not self._is_field_or_enum_field(node.parent):
             return
-        import pdb
-        pdb.set_trace()
         if not self._field_padding_map:
             return
+        import pdb
+        pdb.set_trace()
         name = self._get_field_child_name(node)
         padding = self._field_padding_map.get(name, 0)
         self._padding(padding, ' ')
@@ -510,6 +509,8 @@ class ThriftFormatter(PureThriftFormatter):
         # subblocks : [Function] | [Field] | [Enum_Field]
         if self._option.is_align:
             if self._option.align_field:
+                #import pdb
+                #pdb.set_trace()
                 padding_map, comment_padding = self._calc_subblocks_align_field_padding(subblocks)
                 self._field_comment_padding = self._padding_add_indent(comment_padding)
                 self._field_padding_map = {key: self._padding_add_indent(value) for key, value in padding_map.items()}

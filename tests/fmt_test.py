@@ -217,6 +217,6 @@ struct Work {
     out = fmt.format()
     print(out)
     assert out == '''struct Work {
-    1:          i32 number_a = 0, // hello
-    2: required i32 num2     = 1, //xyz
+    1: i32                  number_a = 0, // hello
+    2: required i32         num2 = 1, //xyz
 }'''
