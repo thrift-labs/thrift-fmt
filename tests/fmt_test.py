@@ -203,7 +203,7 @@ def test_field_assign_align_with_complex2():
     ELEVLEN
 }'''
 
-def no_test_field_align_with_calc():
+def test_field_align_with_calc():
     data = '''
 struct Work {
 1: i32 number_a = 0, // hello
@@ -216,7 +216,10 @@ struct Work {
     fmt.option(Option(align_assign=True, align_field=True, indent=4, patch_required=False))
     out = fmt.format()
     print(out)
-    assert out == '''struct Work {
-    1:          i32 number_a = 0, // hello
-    2: required i32 num2     = 1, //xyz
-}'''
+    assert out == '''
+struct Work {
+    1:          i32 number_a = 0 , // hello
+    2: required i32 num2     = 1 , //xyz
+}
+'''.strip()
+
