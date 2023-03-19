@@ -499,15 +499,19 @@ class ThriftFormatter(PureThriftFormatter):
         print(padding)
         return padding, 0
 
-    def _padding_align_assign(self, node: TerminalNodeImpl):
-        if self._is_field_or_enum_field(self._parent(node)) and self._is_token(node, '='):
+    def _padding_align_assign(self, node: ParseTree):
+        if not self._is_field_or_enum_field(self._parent(node)):
+            return
+        if self._is_token(node, '='):
             self._padding(self._field_assign_padding, ' ')
 
-    def _padding_align_field(self, node: TerminalNodeImpl):
+    def _padding_align_field(self, node: ParseTree):
         if not self._is_field_or_enum_field(self._parent(node)):
             return
         if not self._field_padding_map:
             return
+        import pdb
+        pdb.set_trace()
         name = self._get_field_child_name(node)
         padding = self._field_padding_map.get(name, 0)
         self._padding(padding, ' ')
@@ -544,14 +548,16 @@ class ThriftFormatter(PureThriftFormatter):
         self._field_comment_padding = 0
         self._field_padding_map = {}
 
+    def after_block_node_hook(self, _: ParseTree):
+        self._tail_comment()
+
     def before_process_node(self, node: ParseTree):
         if self._option.is_align:
             self._padding_align(node)
 
-    def after_block_node_hook(self, _: ParseTree):
-        self._tail_comment()
-
     def _get_current_line(self):
+        if self._newline_c > 0:
+            return ''
         cur = self._out.getvalue().rsplit('\n', 1)[-1]
         return cur
 
