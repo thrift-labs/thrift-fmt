@@ -118,6 +118,12 @@ class PureThriftFormatter(object):
             ThriftParser.ServiceContext,
         ))
 
+    @staticmethod
+    def _parent(node: ParseTree):
+        if hasattr(node, 'parent'):
+            return node.parent
+        return None
+
     def after_block_node_hook(self, _: ParseTree):
         pass
 
@@ -180,6 +186,12 @@ class PureThriftFormatter(object):
     def after_subblocks_hook(self, _: List[ParseTree]):
         pass
 
+    def before_process_node(self, _: ParseTree):
+        pass
+
+    def after_process_node(self, _: ParseTree):
+        pass
+
     def process_node(self, node: ParseTree):
         if not isinstance(node, TerminalNodeImpl):
             for child in node.children:
@@ -188,7 +200,9 @@ class PureThriftFormatter(object):
         method_name = node.__class__.__name__.split('.')[-1]
         fn = getattr(self, method_name, None)
         assert fn
+        self.before_process_node(node)
         fn(node)
+        self.after_process_node(node)
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
@@ -293,7 +307,6 @@ class ThriftFormatter(PureThriftFormatter):
         return self.format_node(self._document)
 
     def patch(self):
-        self._document.parent = None
         if self._option.patch_required:
             self.walk_node(self._document, self._patch_field_req)
 
@@ -305,7 +318,8 @@ class ThriftFormatter(PureThriftFormatter):
     def _patch_field_req(node: ParseTree):
         if not isinstance(node, ThriftParser.FieldContext):
             return
-        if isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext)):
+        if isinstance(PureThriftFormatter._parent(node),
+                      (ThriftParser.Function_Context, ThriftParser.Throws_listContext)):
             return
 
         for i, child in enumerate(node.children):
@@ -349,7 +363,7 @@ class ThriftFormatter(PureThriftFormatter):
 
     def _patch_remove_last_list_separator(self, node: ParseTree):
         is_inline_field = isinstance(node, ThriftParser.FieldContext) and \
-            isinstance(node.parent, (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
+            isinstance(self._parent(node), (ThriftParser.Function_Context, ThriftParser.Throws_listContext))
         is_inline_node = isinstance(node, ThriftParser.Type_annotationContext)
 
         if is_inline_field or is_inline_node:
@@ -357,11 +371,12 @@ class ThriftFormatter(PureThriftFormatter):
 
     @staticmethod
     def _remove_last_list_separator(node: ParseTree):
-        if not node.parent:
+        parent = PureThriftFormatter._parent(node)
+        if not parent:
             return
 
         is_last = False
-        brothers = node.parent.children
+        brothers = parent.children
         for i, child in enumerate(brothers):
             if child is node and i < len(brothers) - 1:
                 if not isinstance(brothers[i + 1], child.__class__):
@@ -372,7 +387,7 @@ class ThriftFormatter(PureThriftFormatter):
             node.children.pop()
 
     @staticmethod
-    def _is_field_or_enum_field(node: ParseTree):
+    def _is_field_or_enum_field(node: ParseTree | None):
         return isinstance(node, (ThriftParser.FieldContext, ThriftParser.Enum_fieldContext))
 
     def _calc_subblocks_comment_padding(self, subblocks: List[ParseTree]):
@@ -485,16 +500,14 @@ class ThriftFormatter(PureThriftFormatter):
         return padding, 0
 
     def _padding_align_assign(self, node: TerminalNodeImpl):
-        if self._is_field_or_enum_field(node.parent) and self._is_token(node, '='):
+        if self._is_field_or_enum_field(self._parent(node)) and self._is_token(node, '='):
             self._padding(self._field_assign_padding, ' ')
 
     def _padding_align_field(self, node: TerminalNodeImpl):
-        if not self._is_field_or_enum_field(node.parent):
+        if not self._is_field_or_enum_field(self._parent(node)):
             return
         if not self._field_padding_map:
             return
-        import pdb
-        pdb.set_trace()
         name = self._get_field_child_name(node)
         padding = self._field_padding_map.get(name, 0)
         self._padding(padding, ' ')
@@ -530,6 +543,10 @@ class ThriftFormatter(PureThriftFormatter):
         self._field_assign_padding = 0
         self._field_comment_padding = 0
         self._field_padding_map = {}
+
+    def before_process_node(self, node: ParseTree):
+        if self._option.is_align:
+            self._padding_align(node)
 
     def after_block_node_hook(self, _: ParseTree):
         self._tail_comment()
@@ -613,9 +630,5 @@ class ThriftFormatter(PureThriftFormatter):
 
         # add abrove comments
         self._line_comments(node)
-
-        # add field padding
-        if self._option.is_align:
-            self._padding_align(node)
 
         super().TerminalNodeImpl(node)
