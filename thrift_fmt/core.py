@@ -484,15 +484,18 @@ class ThriftFormatter(PureThriftFormatter):
                 level_length[level] = max(level_length.get(level, 0), length)
 
         level_padding = {}
-        for level, length in level_length.items():
-            level_padding[level] = length + level
+        for level in level_length:
+            if level == name_levels.get('List_separatorContext'):
+                level_padding[level] = level - 1
+            else:
+                level_padding[level] = level
+
             for i in range(0, level):
                 level_padding[level] += level_length[i]
 
         padding = {}
         for name in name_levels:
             padding[name] = level_padding[name_levels[name]]
-
         return padding, 0
 
     def _padding_align_assign(self, node: ParseTree):
