@@ -485,7 +485,11 @@ class ThriftFormatter(PureThriftFormatter):
 
         level_padding = {}
         for level in level_length:
-            level_padding[level] = level
+            if level == name_levels.get('List_separatorContext'):
+                level_padding[level] = level - 1
+            else:
+                level_padding[level] = level
+
             for i in range(0, level):
                 level_padding[level] += level_length[i]
 

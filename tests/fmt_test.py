@@ -210,7 +210,6 @@ struct Work {
 2: required i32 num2 = 1,//xyz
 }
 '''
-
     thrift = ThriftData.from_str(data)
     fmt = ThriftFormatter(thrift)
     fmt.option(Option(align_assign=True, align_field=True, indent=4, patch_required=False))
@@ -218,8 +217,54 @@ struct Work {
     print(out)
     assert out == '''
 struct Work {
-    1:          i32 number_a = 0 , // hello
-    2: required i32 num2     = 1 , //xyz
+    1:          i32 number_a = 0, // hello
+    2: required i32 num2     = 1, //xyz
 }
 '''.strip()
 
+def test_field_align_with_calc_complex():
+    data = '''
+struct Work {
+1: i32 number_a = 0, // hello
+2: required i32 num2 = 1,//xyz
+3: list<i32> num3 = [1, 2, 3],// num3
+11: string str_b = "hello-world"
+}
+'''
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(align_assign=True, align_field=True, indent=4, patch_required=False, patch_sep=True))
+    out = fmt.format()
+    print(out)
+    assert out == '''
+struct Work {
+    1:           i32       number_a = 0            , // hello
+    2:  required i32       num2     = 1            , //xyz
+    3:           list<i32> num3     = [ 1, 2, 3 ]  , // num3
+    11:          string    str_b    = "hello-world",
+}
+'''.strip()
+
+
+def test_field_align_with_calc_complex_with_patch():
+    data = '''
+struct Work {
+1: i32 number_a = 0, // hello
+2: required i32 num2 = 1,//xyz
+3: list<i32> num3 = [1, 2, 3],// num3
+11: string str_b = "hello-world"
+}
+'''
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(align_assign=True, align_field=True, indent=4, patch_required=True, patch_sep=True))
+    out = fmt.format()
+    print(out)
+    assert out == '''
+struct Work {
+    1:  required i32       number_a = 0            , // hello
+    2:  required i32       num2     = 1            , //xyz
+    3:  required list<i32> num3     = [1, 2, 3]  , // num3
+    11: required string    str_b    = "hello-world",
+}
+'''.strip()
