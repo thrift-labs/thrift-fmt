@@ -268,3 +268,18 @@ struct Work {
     11: required string    str_b    = "hello-world",
 }
 '''.strip()
+
+def test_field_align_with_enum():
+    data = '''
+enum NUM {
+    ONE     = 1,
+    SEVEN   = 7,
+    ELEVLEN    ,
+}'''
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(align_assign=True, align_field=True, indent=4, patch_required=True, patch_sep=True))
+    out = fmt.format()
+    print(out)
+    assert out == '''
+'''.strip()
