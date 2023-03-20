@@ -264,7 +264,7 @@ struct Work {
 struct Work {
     1:  required i32       number_a = 0            , // hello
     2:  required i32       num2     = 1            , //xyz
-    3:  required list<i32> num3     = [1, 2, 3]  , // num3
+    3:  required list<i32> num3     = [ 1, 2, 3 ]  , // num3
     11: required string    str_b    = "hello-world",
 }
 '''.strip()
