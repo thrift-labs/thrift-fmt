@@ -281,5 +281,10 @@ enum NUM {
     fmt.option(Option(align_assign=True, align_field=True, indent=4, patch_required=True, patch_sep=True))
     out = fmt.format()
     print(out)
-    assert out == '''
+    assert out.strip() == '''
+enum NUM {
+    ONE     = 1,
+    SEVEN   = 7,
+    ELEVLEN    ,
+}
 '''.strip()
