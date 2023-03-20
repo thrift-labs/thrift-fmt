@@ -499,6 +499,20 @@ class ThriftFormatter(PureThriftFormatter):
         return padding
 
     # TODO: better name for _padding_xxx
+    def _get_current_line(self) -> str:
+        if self._newline_c > 0:
+            return ''
+        cur = self._out.getvalue().rsplit('\n', 1)[-1]
+        return cur
+
+    def _padding(self, padding: int, pad: str = ' '):
+        if padding <= 0:
+            return
+        cur = self._get_current_line()
+        padding = padding - len(cur)
+        if padding > 0:
+            self._append(pad * padding)
+
     def _padding_add_indent(self, padding: int):
         if padding > 0:
             return padding + self._option.indent
@@ -537,18 +551,18 @@ class ThriftFormatter(PureThriftFormatter):
             elif self._option.align_assign:
                 # assign align && comment
                 assign_padding, comment_padding = self._calc_field_align_assign_padding(subblocks)
-                self._field_align_assign_padding = self._padding_add_indent(assign_padding)
-                self._field_comment_padding = self._padding_add_indent(comment_padding)
+                self._field_align_assign_padding: int = self._padding_add_indent(assign_padding)
+                self._field_comment_padding: int = self._padding_add_indent(comment_padding)
 
         # clac for comment
         if self._option.keep_comment and self._field_comment_padding == 0:
-            padding = self._calc_subblocks_comment_padding(subblocks)
-            self._field_comment_padding = self._padding_add_indent(padding)
+            padding: int = self._calc_subblocks_comment_padding(subblocks)
+            self._field_comment_padding: int = self._padding_add_indent(padding)
 
     def after_subblocks(self, _: List[ParseTree]):
-        self._field_align_assign_padding = 0
-        self._field_comment_padding = 0
-        self._field_align_padding_map = {}
+        self._field_align_assign_padding: int = 0
+        self._field_comment_padding: int = 0
+        self._field_align_padding_map: Dict[str, int] = {}
 
     def after_block_node(self, _: ParseTree):
         self._tail_comment()
@@ -556,20 +570,6 @@ class ThriftFormatter(PureThriftFormatter):
     def before_process_node(self, node: ParseTree):
         if self._option.is_align:
             self._padding_align(node)
-
-    def _get_current_line(self):
-        if self._newline_c > 0:
-            return ''
-        cur = self._out.getvalue().rsplit('\n', 1)[-1]
-        return cur
-
-    def _padding(self, padding: int, pad: str = ' '):
-        if padding <= 0:
-            return
-        cur = self._get_current_line()
-        padding = padding - len(cur)
-        if padding > 0:
-            self._append(pad * padding)
 
     def _line_comments(self, node: TerminalNodeImpl):
         if not self._option.keep_comment:
