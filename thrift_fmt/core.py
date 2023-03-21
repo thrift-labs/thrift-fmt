@@ -498,7 +498,6 @@ class ThriftFormatter(PureThriftFormatter):
             padding[name] = level_padding[name_levels[name]]
         return padding
 
-    # TODO: better name for _padding_xxx
     def _get_current_line(self) -> str:
         if self._newline_c > 0:
             return ''
@@ -513,51 +512,41 @@ class ThriftFormatter(PureThriftFormatter):
         if padding > 0:
             self._append(pad * padding)
 
-    def _padding_add_indent(self, padding: int):
+    def _add_indent_padding(self, padding: int):
         if padding > 0:
             return padding + self._option.indent
         return 0
 
-    def _padding_align_assign(self, node: ParseTree):
-        if not self._is_field_or_enum_field(self._get_parent(node)):
-            return
-        if self._is_token(node, '='):
-            self._padding(self._field_align_assign_padding, ' ')
-
-    def _padding_align_field(self, node: ParseTree):
-        if not self._is_field_or_enum_field(self._get_parent(node)):
-            return
-        if not self._field_align_padding_map:
-            return
-
-        name: str = self._get_field_child_name(node)
-        padding: int = self._field_align_padding_map.get(name, 0)
-        self._padding(padding, ' ')
-
     def _padding_align(self, node: TerminalNodeImpl):
+        if not self._is_field_or_enum_field(self._get_parent(node)):
+            return
+
         if self._option.align_field:
-            self._padding_align_field(node)
+            if self._field_align_padding_map:
+                padding: int = self._field_align_padding_map.get(self._get_field_child_name(node), 0)
+                self._padding(padding, ' ')
         if self._option.align_assign:
-            self._padding_align_assign(node)
+            if self._is_token(node, '='):
+                self._padding(self._field_align_assign_padding, ' ')
 
     def before_subblocks(self, subblocks: List[ParseTree]):
         # subblocks : [Function] | [Field] | [Enum_Field]
         if self._option.is_align:
             if self._option.align_field:
-                # TODO: check the comment padding
+                # TODO: add comment padding calc
                 padding_map = self._calc_field_align_padding_map(subblocks)
-                self._field_align_padding_map = {key: self._padding_add_indent(value) for key, value in padding_map.items()}
+                self._field_align_padding_map = {key: self._add_indent_padding(value) for key, value in padding_map.items()}
 
             elif self._option.align_assign:
                 # assign align && comment
                 assign_padding, comment_padding = self._calc_field_align_assign_padding(subblocks)
-                self._field_align_assign_padding: int = self._padding_add_indent(assign_padding)
-                self._field_comment_padding: int = self._padding_add_indent(comment_padding)
+                self._field_align_assign_padding: int = self._add_indent_padding(assign_padding)
+                self._field_comment_padding: int = self._add_indent_padding(comment_padding)
 
         # clac for comment
         if self._option.keep_comment and self._field_comment_padding == 0:
             padding: int = self._calc_subblocks_comment_padding(subblocks)
-            self._field_comment_padding: int = self._padding_add_indent(padding)
+            self._field_comment_padding: int = self._add_indent_padding(padding)
 
     def after_subblocks(self, _: List[ParseTree]):
         self._field_align_assign_padding: int = 0
@@ -578,8 +567,8 @@ class ThriftFormatter(PureThriftFormatter):
         if hasattr(node.symbol, 'is_fake') and node.symbol.is_fake:
             return
 
-        token_index = node.symbol.tokenIndex
-        comments = []
+        token_index: int = node.symbol.tokenIndex
+        comments: List[CommonToken] = []
         for token in self._data.tokens[self._last_token_index + 1:]:
             if token.channel != 2:
                 continue
@@ -602,7 +591,7 @@ class ThriftFormatter(PureThriftFormatter):
             else:
                 self._newline(2)
 
-        self._last_token_index = node.symbol.tokenIndex
+        self._last_token_index: int = node.symbol.tokenIndex
 
     def _tail_comment(self):
         if not self._option.keep_comment:
@@ -611,8 +600,8 @@ class ThriftFormatter(PureThriftFormatter):
         if self._last_token_index == -1:
             return
 
-        last_token = self._data.tokens[self._last_token_index]
-        comments = []
+        last_token: CommonToken = self._data.tokens[self._last_token_index]
+        comments: List[CommonToken] = []
         for token in self._data.tokens[self._last_token_index + 1:]:
             if token.line != last_token.line:
                 break
@@ -627,7 +616,7 @@ class ThriftFormatter(PureThriftFormatter):
             # TODO: fix //a type comment
             self._append(comments[0].text.strip())
             self._push('')
-            self._last_token_index = comments[0].tokenIndex
+            self._last_token_index: int = comments[0].tokenIndex
 
     def TerminalNodeImpl(self, node: TerminalNodeImpl):
         assert isinstance(node, TerminalNodeImpl)
