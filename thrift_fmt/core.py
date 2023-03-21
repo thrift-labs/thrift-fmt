@@ -58,10 +58,10 @@ class PureThriftFormatter(object):
     def option(self, option: Option):
         self._option = option
 
-    def format_node(self, node: ParseTree):
+    def format_node(self, node: ParseTree) -> str:
         self._out: io.StringIO = io.StringIO()
-        self._newline_c = 0
-        self._indent_s = ''
+        self._newline_c: int = 0
+        self._indent_s: str = ''
 
         self.process_node(node)
         return self._out.getvalue()
