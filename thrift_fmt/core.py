@@ -395,9 +395,12 @@ class ThriftFormatter(PureThriftFormatter):
 
     @staticmethod
     def _calc_subblocks_comment_padding(subblocks: List[ParseTree]):
-        padding = 0
+        if not subblocks:
+            return 0
+        padding: int = 0
         for subblock in subblocks:
             padding = max(padding, len(PureThriftFormatter().format_node(subblock)))
+
         if padding > 0:
             return padding + 1
         return 0
