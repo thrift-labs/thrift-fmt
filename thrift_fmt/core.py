@@ -401,6 +401,7 @@ class ThriftFormatter(PureThriftFormatter):
         if padding > 0:
             return padding + 1
         return 0
+
     # align by assign
     @staticmethod
     def _split_field_by_assign(node: ParseTree):
