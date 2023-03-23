@@ -106,6 +106,7 @@ def test_from_string():
     fmt = ThriftFormatter(thrift)
     fmt.option(Option(align_assign=False))
     out = fmt.format()
+    print(out)
     assert out == '''
 include "shared.thrift" // a
 

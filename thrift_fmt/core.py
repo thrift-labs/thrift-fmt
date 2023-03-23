@@ -395,10 +395,15 @@ class ThriftFormatter(PureThriftFormatter):
 
     @staticmethod
     def _calc_subblocks_comment_padding(subblocks: List[ParseTree]):
-        comment_padding = 0
+        if not subblocks:
+            return 0
+        padding: int = 0
         for subblock in subblocks:
-            comment_padding = max(comment_padding, len(PureThriftFormatter().format_node(subblock)))
-        return comment_padding
+            padding = max(padding, len(PureThriftFormatter().format_node(subblock)))
+
+        if padding > 0:
+            return padding + 1
+        return 0
 
     # align by assign
     @staticmethod
@@ -442,7 +447,7 @@ class ThriftFormatter(PureThriftFormatter):
             right_max_size = max(right_max_size, len(PureThriftFormatter().format_node(right)))
 
         assign_padding: int = left_max_size + 1  # add an extra space for assgin
-        comment_padding: int = assign_padding + right_max_size
+        comment_padding: int = assign_padding + right_max_size + 1  # add an extra space for next
         # if right part is only a comma, it should tight with the left, so remove an extra space
         #   case 1 --> "1: bool a = true," ---> "1: bool a" + " " + "= true,"
         #   case 2 --> "2: bool b," ---> "2: bool b" + "" + ","
@@ -457,10 +462,11 @@ class ThriftFormatter(PureThriftFormatter):
         return node.__class__.__name__
 
     @staticmethod
-    def _calc_field_align_padding_map(subblocks: List[ParseTree]) -> Dict[str, int]:
+    def _calc_field_align_padding_map(subblocks: List[ParseTree]) -> Tuple[Dict[str, int], int]:
         if not subblocks or not ThriftFormatter._is_field_or_enum_field(subblocks[0]):
-            return {}
+            return {}, 0
 
+        sep_class = str(ThriftParser.List_separatorContext.__name__)
         name_levels: Dict[str, int] = {}
         for subblock in subblocks:
             for i in range(len(subblock.children)-1):
@@ -474,7 +480,7 @@ class ThriftFormatter(PureThriftFormatter):
 
         # 检查 levles 连续
         if max(name_levels.values()) + 1 != len(name_levels):
-            return {}
+            return {}, 0
 
         level_length: Dict[int, int] = {}
         for subblock in subblocks:
@@ -485,7 +491,7 @@ class ThriftFormatter(PureThriftFormatter):
 
         level_padding: Dict[int, int] = {}
         for level in level_length:
-            if level == name_levels.get('List_separatorContext'):
+            if level == name_levels.get(sep_class):
                 level_padding[level] = level - 1  # separator should tight with left. so remove one
             else:
                 level_padding[level] = level
@@ -496,7 +502,14 @@ class ThriftFormatter(PureThriftFormatter):
         padding: Dict[str, int] = {}
         for name in name_levels:
             padding[name] = level_padding[name_levels[name]]
-        return padding
+
+        comment_padding: int = len(level_length)  # add n-1 and an extra space
+        for level in level_length:
+            comment_padding += level_length[level]
+        if sep_class in padding:
+            comment_padding -= 1
+
+        return padding, comment_padding
 
     def _get_current_line(self) -> str:
         if self._newline_c > 0:
@@ -533,9 +546,9 @@ class ThriftFormatter(PureThriftFormatter):
         # subblocks : [Function] | [Field] | [Enum_Field]
         if self._option.is_align:
             if self._option.align_field:
-                # TODO: add comment padding calc
-                padding_map = self._calc_field_align_padding_map(subblocks)
+                padding_map, comment_padding = self._calc_field_align_padding_map(subblocks)
                 self._field_align_padding_map = {key: self._add_indent_padding(value) for key, value in padding_map.items()}
+                self._field_comment_padding: int = self._add_indent_padding(comment_padding)
 
             elif self._option.align_assign:
                 # assign align && comment
@@ -611,9 +624,10 @@ class ThriftFormatter(PureThriftFormatter):
 
         assert len(comments) <= 1
         if comments:
-            self._padding(self._field_comment_padding, ' ')
-            self._append(' ')  # TODO: check if this need move as self._field_comment_padding += 1
-            # TODO: fix //a type comment
+            if self._field_comment_padding:
+                self._padding(self._field_comment_padding, ' ')
+            else:
+                self._append(' ')  # add space
             self._append(comments[0].text.strip())
             self._push('')
             self._last_token_index: int = comments[0].tokenIndex
