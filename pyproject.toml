@@ -1,7 +1,7 @@
 [project]
 name = "thrift-fmt"
-version = "0.3.0a3"
-description = "formart thrift file"
+version = "0.3.0"
+description = "format thrift file"
 authors = [
     {name = "alingse", email = "alingse@foxmail.com"},
 ]
@@ -14,7 +14,7 @@ readme = "README.md"
 license = {text = "MIT"}
 
 [project.urls]
-homepage = "https://github.com/alingse/thrift-fmt"
+homepage = "https://github.com/thrift-labs/thrift-fmt"
 
 [project.scripts]
 thrift-fmt = "thrift_fmt.main:main"

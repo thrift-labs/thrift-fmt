@@ -1,6 +1,9 @@
 import os
 import glob
 
+from click.testing import CliRunner
+from thrift_fmt.main import main
+
 from thrift_parser import ThriftData
 from thrift_fmt import PureThriftFormatter, ThriftFormatter, Option
 
@@ -295,3 +298,118 @@ enum NUM {
     ELEVLEN    ,
 }
 '''.strip()
+
+
+def test_without_patch_align_assign():
+    data = '''
+    struct Response {
+    } // hello
+    senum SENUMS {
+    }
+    struct Param {
+        1: i64 num,
+    }
+    service Hello {
+    void ping(),
+    void pong()
+    }
+    // comment
+    '''
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(keep_comment=False, align_assign=True).disble_patch())
+    out = fmt.format()
+    print(out)
+    assert out.strip() == '''
+struct Response {
+}
+
+struct Param {
+    1: i64 num,
+}
+
+service Hello {
+    void ping(),
+    void pong()
+}
+'''.strip()
+
+def test_without_patch_align_field():
+    data = '''
+    struct Response {
+    } // hello
+    senum SENUMS {
+    }
+    struct Param {
+        1: i64 num,
+    }
+    service Hello {
+    void ping(),
+    void pong()
+    }
+    // comment
+    '''
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(keep_comment=False, align_field=True).disble_patch())
+    out = fmt.format()
+    print(out)
+    assert out.strip() == '''
+struct Response {
+}
+
+struct Param {
+    1: i64 num,
+}
+
+service Hello {
+    void ping(),
+    void pong()
+}
+'''.strip()
+
+def test_with_empty():
+    data = ''' '''
+    thrift = ThriftData.from_str(data)
+    fmt = ThriftFormatter(thrift)
+    fmt.option(Option(keep_comment=False).disble_align().disble_patch())
+    out = fmt.format()
+    print(out)
+    assert out.strip() == ''''''.strip()
+
+def test_with_click():
+    runner = CliRunner()
+    args_list = [
+        [
+            '-i 4',
+            '--remove-comment',
+            '--patch-required',
+            '--patch-sep',
+            '--align-assign',
+            '-r',
+            './'
+        ],
+        [
+            '-i 4',
+            '--no-patch',
+            '--no-align',
+            './'
+        ],
+        [
+            '-i 4',
+            '--no-patch',
+            '--no-align',
+            '-w',
+            './tests/fixtures/simple.thrift',
+        ],
+        [
+            '-i 4',
+            '--no-patch',
+            '--no-align',
+            './tests/fixtures/simple.thrift',
+        ],
+    ]
+
+    for args in args_list:
+        result = runner.invoke(main, args)
+        assert result.exit_code == 0
