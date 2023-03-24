@@ -4,6 +4,7 @@ Thrift Formatter
 
 ![Github Actions](https://github.com/thrift-labs/thrift-fmt/workflows/Python%20package/badge.svg)
 [![PyPI](https://img.shields.io/pypi/v/thrift-fmt?logo=python&logoColor=%23cccccc)](https://pypi.org/project/thrift-fmt)
+[![codecov](https://codecov.io/gh/thrift-labs/thrift-fmt/branch/master/graph/badge.svg?token=0R6PGQ57WQ)](https://codecov.io/gh/thrift-labs/thrift-fmt)
 [![Downloads](https://pepy.tech/badge/thrift-fmt/week)](https://pepy.tech/project/thrift-fmt)
 [![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
