@@ -18,9 +18,9 @@ from .core import ThriftData, ThriftFormatter, Option
 @click.option(
     '--patch-sep', is_flag=True, show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
 @click.option(
-    '--align-field', is_flag=True, show_default=True, default=False, help='align by struct/enum/union/exception\'s field each part')
+    '--align-field', is_flag=True, show_default=True, default=False, help='align by field\'s each part (in struct/enum/union/exception)')
 @click.option(
-    '--align-assign', is_flag=True, show_default=True, default=True, help='align struct/enum/union/exception\'s field by assign `=`')
+    '--align-assign', is_flag=True, show_default=True, default=True, help='align by field\'s assign `=` (in struct/enum/union/exception)')
 @click.option(
     '--no-patch', is_flag=True, default=False, help='disable all --patch-xx flag')
 @click.option(
