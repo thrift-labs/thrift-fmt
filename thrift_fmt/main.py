@@ -18,6 +18,8 @@ from .core import ThriftData, ThriftFormatter, Option
 @click.option(
     '--patch-sep', is_flag=True, show_default=True, default=True, help='patch the separator in struct/enum/service/union/exception (default use comma)')
 @click.option(
+    '--align-field', is_flag=True, show_default=True, default=False, help='align by struct/enum/union/exception\'s field each part')
+@click.option(
     '--align-assign', is_flag=True, show_default=True, default=True, help='align struct/enum/union/exception\'s field by assign `=`')
 @click.option(
     '--no-patch', is_flag=True, default=False, help='disable all --patch-xx flag')
@@ -33,7 +35,7 @@ from .core import ThriftData, ThriftFormatter, Option
     type=click.Path(exists=True, file_okay=True, dir_okay=True), required=True)
 def main(indent: Optional[int], remove_comment: Optional[bool],
          patch_required: Optional[bool], patch_sep: Optional[bool],
-         align_assign: Optional[bool],
+         align_field: Optional[bool], align_assign: Optional[bool],
          no_patch: Optional[bool], no_align: Optional[bool],
          recursive: Optional[bool], write: Optional[bool],
          path: str):
@@ -57,7 +59,8 @@ def main(indent: Optional[int], remove_comment: Optional[bool],
         patch_required=patch_required,
         keep_comment=not remove_comment,
         indent=indent,
-        align_assign=align_assign)
+        align_assign=align_assign,
+        align_field=align_field)
 
     if no_patch:
         option.disble_patch()

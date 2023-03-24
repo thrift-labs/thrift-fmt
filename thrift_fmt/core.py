@@ -34,13 +34,15 @@ class Option:
         self.align_assign: bool = align_assign
         self.align_field: bool = align_field
 
-    def disble_patch(self):
+    def disble_patch(self) -> Option:
         self.patch_required = False
         self.patch_sep = False
+        return self
 
-    def disble_align(self):
+    def disble_align(self) -> Option:
         self.align_field = False
         self.align_assign = False
+        return self
 
     @property
     def is_align(self):
@@ -400,8 +402,6 @@ class ThriftFormatter(PureThriftFormatter):
 
     @staticmethod
     def _calc_subblocks_comment_padding(subblocks: List[ParseTree]):
-        if not subblocks:
-            return 0
         padding: int = 0
         for subblock in subblocks:
             padding = max(padding, len(PureThriftFormatter().format_node(subblock)))
