@@ -35,7 +35,7 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pdm run -v pytest tests
+        pdm run -v pytest --cov=./thrift_fmt --cov-report=xml tests
         pdm run flake8 ./thrift_fmt --ignore=E501,E226,W503
 
     - name: Test with Real

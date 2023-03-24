@@ -2,37 +2,69 @@
 
 Thrift Formatter
 
-Can be used as command line tool `thrift-fmt` and python sdk `thrift_fmt`
+![Github Actions](https://github.com/thrift-labs/thrift-fmt/workflows/Python%20package/badge.svg)
+[![PyPI](https://img.shields.io/pypi/v/thrift-fmt?logo=python&logoColor=%23cccccc)](https://pypi.org/project/thrift-fmt)
+[![Downloads](https://pepy.tech/badge/thrift-fmt/week)](https://pepy.tech/project/thrift-fmt)
+[![pdm-managed](https://img.shields.io/badge/pdm-managed-blueviolet)](https://pdm.fming.dev)
 
-The parser is thrift-parser https://github.com/alingse/thrift-parser
+can be used as command line tool `thrift-fmt` and python sdk `thrift_fmt`
+
+use thrift-parser https://github.com/thrift-labs/thrift-parser as parser
 
 ## Usage
-### install
+### Install
 
 ```bash
 pip install thrift-fmt
 ```
 
-### format files
+### Format files
 
-Format single file and print to stdout
+format single file and print to stdout
 
 ```bash
 thrift-fmt mythrift.thrift
 ```
 
-Format and overwrite the origin file
+format and overwrite the origin file
 ```bash
 thrift-fmt -w mythrift.thrift
 ```
 
-Format a directory, this will overwrite the origin file, please keep in track
+format a directory, this will overwrite the origin file, please keep in track
 
 ```bash
 thrift-fmt -r ./thrift_files
 ```
 
-## Use in Code
+## Feature
+
+1. keep and align all comments
+2. patch list separator
+3. patch missed field's `required` flag
+4. align by the field's assign (like go)
+5. align by each field's part
+6. Format only part of the parsed thrift
+
+example
+```thrift
+struct Work {
+    1: required i32 number_a = 0, // hello
+    2: optional i32 num2     = 1, // xyz
+}
+```
+
+align by each field's part
+```thrift
+struct Work {
+    1:  required i32       number_a = 0            , // hello
+    2:  required i32       num2     = 1            , // xyz
+    3:  required list<i32> num3     = [ 1, 2, 3 ]  , // num3
+    11: required string    str_b    = "hello-world",
+}
+```
+
+## Use as sdk
 
 use `thrift_parser.ThriftData` to parse from file or str
 
@@ -74,32 +106,6 @@ header = PureThriftFormatter().format_node(thrift.document.children[0])
 assert header == 'include "shared.thrift"'
 ```
 
-## Feature
-
-1. keep and align all comments
-2. patch list separator
-3. patch missed field's `required` flag
-4. align by the field's assign (like go)
-5. align by each field's part
-6. Format only part of the parsed thrift
-
-example
-```thrift
-struct Work {
-    1: required i32 number_a = 0, // hello
-    2: optional i32 num2     = 1, // xyz
-}
-```
-
-align by each field's part
-```thrift
-struct Work {
-    1:  required i32       number_a = 0            , // hello
-    2:  required i32       num2     = 1            , // xyz
-    3:  required list<i32> num3     = [ 1, 2, 3 ]  , // num3
-    11: required string    str_b    = "hello-world",
-}
-```
 
 ### TODO
 
