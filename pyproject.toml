@@ -26,6 +26,7 @@ excludes = ["tests/"]
 [tool.pdm.dev-dependencies]
 test = [
     "pytest>=7.1.2",
+    "pytest-cov",
 ]
 dev = [
     "flake8>=4.0.1",
