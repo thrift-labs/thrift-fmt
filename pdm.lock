@@ -35,6 +35,23 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 summary = "Cross-platform colored terminal text."
 
 [[package]]
+name = "coverage"
+version = "7.2.2"
+requires_python = ">=3.7"
+summary = "Code coverage measurement for Python"
+
+[[package]]
+name = "coverage"
+version = "7.2.2"
+extras = ["toml"]
+requires_python = ">=3.7"
+summary = "Code coverage measurement for Python"
+dependencies = [
+    "coverage==7.2.2",
+    "tomli; python_full_version <= \"3.11.0a6\"",
+]
+
+[[package]]
 name = "flake8"
 version = "4.0.1"
 requires_python = ">=3.6"
@@ -126,6 +143,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pytest-cov"
+version = "4.0.0"
+requires_python = ">=3.6"
+summary = "Pytest plugin for measuring coverage."
+dependencies = [
+    "coverage[toml]>=5.2.1",
+    "pytest>=4.6",
+]
+
+[[package]]
 name = "thrift-parser"
 version = "1.0.7"
 requires_python = ">=3.7"
@@ -154,7 +181,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 
 [metadata]
 lock_version = "4.1"
-content_hash = "sha256:e210707b773daa0deae0437d7a1a46d5cf9fcb96901a445f341af55e6b9b0b68"
+content_hash = "sha256:517011f5e06023e061c0b1af10cd74420ec886565ff8955b1062173c35409101"
 
 [metadata.files]
 "antlr4-python3-runtime 4.11.1" = [
