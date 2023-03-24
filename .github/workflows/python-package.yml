@@ -46,3 +46,10 @@ jobs:
         pdm run -v thrift-fmt -w ./tests/fixtures/simple.thrift
         pdm run -v thrift-fmt ./tests/fixtures
         pdm run -v thrift-fmt -r ./tests
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        file: ./coverage.xml
+        flags: unittests
