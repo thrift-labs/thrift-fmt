@@ -88,6 +88,7 @@ def test_all_part():
 
     assert len(all_outs) == 241
 
+
 def test_from_string():
     data = '''
     include    "shared.thrift"   // a
@@ -123,6 +124,7 @@ struct Work {
     header = PureThriftFormatter().format_node(thrift.document.children[0])
     assert header == 'include "shared.thrift"'
 
+
 def test_field_assign_align():
     data = '''
 struct Work {
@@ -139,6 +141,7 @@ struct Work {
     1: required i32 number_a = 0, // hello
     2: required i32 num2     = 1, //xyz
 }'''
+
 
 def test_field_assign_align_for_enum():
     data = '''
@@ -204,6 +207,7 @@ def test_field_assign_align_with_complex2():
     ELEVLEN
 }'''
 
+
 def test_field_align_with_calc():
     data = '''
 struct Work {
@@ -222,6 +226,7 @@ struct Work {
     2: required i32 num2     = 1, //xyz
 }
 '''.strip()
+
 
 def test_field_align_with_calc_complex():
     data = '''
@@ -269,6 +274,7 @@ struct Work {
     11: required string    str_b    = "hello-world",
 }
 '''.strip()
+
 
 def test_field_align_with_enum():
     data = '''

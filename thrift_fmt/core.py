@@ -16,7 +16,7 @@ FAKE_FIELD_REQ_TYPE: int = 21  # copy from thrirft_parser. generate by antlr4
 FAKE_SEP_TOKEN_TEXT: str = ','  # fake separator token, we use comma
 
 
-class Option(object):
+class Option:
     DEFAULT_INDENT: int = 4
 
     def __init__(self, patch_sep: bool = True, patch_required: bool = True,
@@ -47,11 +47,12 @@ class Option(object):
         return self.align_field or self.align_assign
 
 
-class PureThriftFormatter(object):
+class PureThriftFormatter:
 
     def __init__(self):
         self._option: Option = Option()
 
+        self._out: io.StringIO = io.StringIO()
         self._newline_c: int = 0
         self._indent_s: str = ''
 
@@ -326,6 +327,10 @@ class ThriftFormatter(PureThriftFormatter):
                       (ThriftParser.Function_Context, ThriftParser.Throws_listContext)):
             return
 
+        if not node.children:
+            return
+
+        i: int = 0
         for i, child in enumerate(node.children):
             if isinstance(child, ThriftParser.Field_reqContext):
                 return
@@ -410,7 +415,9 @@ class ThriftFormatter(PureThriftFormatter):
     def _split_field_by_assign(node: ParseTree):
         '''
           split field to [left, right] by assgin
-          field: '1: required i32 number_a = 0,' --> left:  '1: required i32 number_a' and right: '= 0,'
+          field: '1: required i32 number_a = 0,' -->
+                left:  '1: required i32 number_a'
+                right: '= 0,'
         '''
         assert ThriftFormatter._is_field_or_enum_field(node)
         left: ParseTree = copy.copy(node)
@@ -419,7 +426,8 @@ class ThriftFormatter(PureThriftFormatter):
         i: int = 0
         current_is_left: bool = True
         for i, child in enumerate(node.children):
-            if PureThriftFormatter._is_token(child, '=') or isinstance(child, ThriftParser.List_separatorContext):
+            if PureThriftFormatter._is_token(child, '=') or \
+                    isinstance(child, ThriftParser.List_separatorContext):
                 current_is_left = False
                 break
 
@@ -432,13 +440,14 @@ class ThriftFormatter(PureThriftFormatter):
 
     @staticmethod
     def _calc_field_align_assign_padding(subblocks: List[ParseTree]) -> Tuple[int, int]:
-        if not subblocks or not ThriftFormatter._is_field_or_enum_field(subblocks[0]):
-            return (0, 0)
         '''
             field: '1: required i32 number_a = 0,'
             assign_padding:   max(left) + 1
             comment_padding:  max(left) + max(right) [+ 1]
         '''
+        if not subblocks or not ThriftFormatter._is_field_or_enum_field(subblocks[0]):
+            return (0, 0)
+
         left_max_size: int = 0
         right_max_size: int = 0
         for subblock in subblocks:
@@ -500,12 +509,12 @@ class ThriftFormatter(PureThriftFormatter):
                 level_padding[level] += level_length[i]
 
         padding: Dict[str, int] = {}
-        for name in name_levels:
-            padding[name] = level_padding[name_levels[name]]
+        for name, level in name_levels.items():
+            padding[name] = level_padding[level]
 
         comment_padding: int = len(level_length)  # add n-1 and an extra space
-        for level in level_length:
-            comment_padding += level_length[level]
+        for _, length in level_length.items():
+            comment_padding += length
         if sep_class in padding:
             comment_padding -= 1
 
@@ -536,7 +545,8 @@ class ThriftFormatter(PureThriftFormatter):
 
         if self._option.align_field:
             if self._field_align_padding_map:
-                padding: int = self._field_align_padding_map.get(self._get_field_child_name(node), 0)
+                child_name: str = self._get_field_child_name(node)
+                padding: int = self._field_align_padding_map.get(child_name, 0)
                 self._padding(padding, ' ')
         if self._option.align_assign:
             if self._is_token(node, '='):
