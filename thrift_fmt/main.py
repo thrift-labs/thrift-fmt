@@ -1,7 +1,8 @@
-import click
 import io
 import pathlib
 from typing import Optional, List
+
+import click
 
 from .core import ThriftData, ThriftFormatter, Option
 
@@ -70,7 +71,7 @@ def main(indent: Optional[int], remove_comment: Optional[bool],
         output = fmt.format()
 
         if write:
-            with io.open(file, 'w') as f:
+            with io.open(file, 'w', encoding='utf8') as f:
                 f.write(output)
         else:
             print(output)
