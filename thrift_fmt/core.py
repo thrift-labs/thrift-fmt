@@ -539,7 +539,7 @@ class ThriftFormatter(PureThriftFormatter):
             return padding + self._option.indent
         return 0
 
-    def _padding_align(self, node: TerminalNodeImpl):
+    def _padding_align(self, node: ParseTree):
         if not self._is_field_or_enum_field(self._get_parent(node)):
             return
 
