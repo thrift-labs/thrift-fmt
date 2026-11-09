@@ -1,5 +1,8 @@
 import os
 import glob
+import shutil
+
+import pytest
 
 from click.testing import CliRunner
 from thrift_fmt.main import main
@@ -377,7 +380,9 @@ def test_with_empty():
     print(out)
     assert out.strip() == ''''''.strip()
 
-def test_with_click():
+def test_with_click(tmp_path, monkeypatch):
+    shutil.copytree(os.path.join(TEST_DIR, 'fixtures'), tmp_path / 'tests' / 'fixtures')
+    monkeypatch.chdir(tmp_path)
     runner = CliRunner()
     args_list = [
         [
@@ -413,3 +418,206 @@ def test_with_click():
     for args in args_list:
         result = runner.invoke(main, args)
         assert result.exit_code == 0
+
+
+def format_text(source, option=None):
+    fmt = ThriftFormatter(ThriftData.from_str(source))
+    fmt.option(option if option is not None else Option(separate_base_fields=True))
+    return fmt.format()
+
+
+@pytest.mark.parametrize('field_type,name', [
+    ('Base', 'Base'),
+    ('base.Base', 'Base'),
+    ('common.meta.Base', 'Base'),
+    ('BaseResp', 'BaseResp'),
+    ('base.BaseResp', 'BaseResp'),
+])
+@pytest.mark.parametrize('option', [
+    Option(separate_base_fields=True),
+    Option(align_field=True, indent=2, separate_base_fields=True),
+    Option(align_assign=False, separate_base_fields=True),
+    Option(keep_comment=False, separate_base_fields=True).disble_align().disble_patch(),
+])
+def test_base_field_separator(field_type, name, option):
+    source = '''struct ArbitraryName {
+    1: optional string Name,
+    42: optional %s %s,
+}''' % (field_type, name)
+    out = format_text(source, option)
+    lines = out.splitlines()
+    assert len(lines) == 5
+    assert lines[2] == ''
+    assert lines[3].strip().endswith('%s,' % name)
+    assert format_text(out, option) == out
+
+
+@pytest.mark.parametrize('blank_lines', ['', '\n', '\n\n\n'])
+def test_base_field_normalizes_blank_lines(blank_lines):
+    source = 'struct ExampleReq {\n1: string Name,\n%s255: base.Base Base,\n}' % blank_lines
+    assert format_text(source) == '''struct ExampleReq {
+    1: required string Name,
+
+    255: required base.Base Base,
+}'''
+
+
+@pytest.mark.parametrize('field', ['base.Base Base', 'base.BaseResp BaseResp'])
+@pytest.mark.parametrize('following_field', ['', '\n1: optional string Name,'])
+def test_first_or_only_base_field(field, following_field):
+    out = format_text('struct Example {\n255: optional %s,%s\n}' % (field, following_field))
+    assert '\n\n' not in out
+    assert out.splitlines()[1] == '    255: optional %s,' % field
+
+
+@pytest.mark.parametrize('patch', [True, False])
+def test_only_base_field_with_leading_comments(patch):
+    option = Option(separate_base_fields=True)
+    if not patch:
+        option.disble_patch()
+    out = format_text('struct Example {\n/* Common metadata */\n\n255: optional base.Base Base,\n}', option)
+    assert out == '''struct Example {
+    /* Common metadata */
+    255: optional base.Base Base,
+}'''
+    assert format_text(out, option) == out
+
+
+@pytest.mark.parametrize('field', [
+    'string Base',
+    'base.Base OtherName',
+    'base.Base BaseResp',
+    'base.BaseResp Base',
+    'base.Base base',
+    'list<base.Base> Base',
+])
+def test_non_metadata_fields_are_not_separated(field):
+    out = format_text('struct Example {\n1: string Name,\n255: %s,\n}' % field)
+    assert '\n\n' not in out
+
+
+@pytest.mark.parametrize('kind', ['union', 'exception'])
+def test_base_separator_only_applies_to_structs(kind):
+    out = format_text('%s Example {\n1: string Name,\n255: base.Base Base,\n}' % kind)
+    assert '\n\n' not in out
+
+
+@pytest.mark.parametrize('comment', [
+    '// Common metadata',
+    '// Common metadata\n// Request context',
+    '/* Common metadata */',
+    '/* Common\nmetadata */',
+    '/* Common metadata */\n/* Request context */',
+])
+@pytest.mark.parametrize('patch_sep', [True, False])
+@pytest.mark.parametrize('gap', ['', '\n\n'])
+def test_base_separator_precedes_leading_comments(comment, patch_sep, gap):
+    source = '''struct ExampleReq {
+1: optional string Name, // Business field
+%s%s
+255: optional base.Base Base // Metadata field
+}''' % (comment, gap)
+    option = Option(align_assign=False, patch_sep=patch_sep, separate_base_fields=True)
+    out = format_text(source, option)
+    expected_comments = '\n'.join('    ' + line if i == 0 or line.startswith(('//', '/*')) else line
+                                  for i, line in enumerate(comment.splitlines()))
+    assert out == '''struct ExampleReq {
+    1: optional string Name,%s// Business field
+
+%s
+    255: optional base.Base Base%s // Metadata field
+}''' % ('      ' if patch_sep else '     ', expected_comments, ',' if patch_sep else '')
+    assert format_text(out, option) == out
+
+
+@pytest.mark.parametrize('comment', ['// Common metadata', '/* Common metadata */'])
+def test_only_base_field_with_leading_comment(comment):
+    out = format_text('struct Example {\n%s\n\n255: base.Base Base\n}' % comment)
+    assert out == '''struct Example {
+    %s
+    255: required base.Base Base,
+}''' % comment
+    assert format_text(out) == out
+
+
+def test_base_separator_with_comments_removed():
+    source = '''struct ExampleReq {
+1: optional string Name, // Business field
+// Common metadata
+255: optional base.Base Base,
+}'''
+    out = format_text(source, Option(keep_comment=False, separate_base_fields=True))
+    assert out == '''struct ExampleReq {
+    1: optional string Name,
+
+    255: optional base.Base Base,
+}'''
+
+
+def test_base_separator_for_single_struct_formatting():
+    thrift = ThriftData.from_str('struct ExampleResp {1: bool OK, 255: base.BaseResp BaseResp}')
+    node = thrift.document.children[0].children[0]
+    fmt = PureThriftFormatter()
+    fmt.option(Option(separate_base_fields=True))
+    assert fmt.format_node(node) == '''struct ExampleResp {
+    1: bool OK,
+
+    255: base.BaseResp BaseResp
+}'''
+
+
+def test_base_separator_does_not_apply_to_service_parameters():
+    out = format_text('service Example {void call(1: string Name, 2: base.Base Base)}')
+    assert out == '''service Example {
+    void call(1: string Name, 2: base.Base Base),
+}'''
+
+
+def test_base_separator_cli(tmp_path):
+    thrift_file = tmp_path / 'example.thrift'
+    thrift_file.write_text('struct ExampleReq {1: string Name, 255: base.Base Base}')
+    result = CliRunner().invoke(main, ['--separate-base-fields', '-w', str(thrift_file)])
+    assert result.exit_code == 0, result.output
+    out = thrift_file.read_text()
+    assert out.strip() == '''struct ExampleReq {
+    1: required string Name,
+
+    255: required base.Base Base,
+}'''
+    result = CliRunner().invoke(main, ['--separate-base-fields', '-w', str(thrift_file)])
+    assert result.exit_code == 0, result.output
+    assert thrift_file.read_text() == out
+
+
+@pytest.mark.parametrize('field', ['base.Base Base', 'base.BaseResp BaseResp'])
+@pytest.mark.parametrize('option', [None, Option(separate_base_fields=False)])
+def test_base_separator_disabled(field, option):
+    fmt = ThriftFormatter(ThriftData.from_str('struct Example {1: string Name, 255: %s}' % field))
+    if option is not None:
+        fmt.option(option)
+    assert fmt.format() == '''struct Example {
+    1: required string Name,
+    255: required %s,
+}''' % field
+
+
+def test_base_separator_disabled_preserves_comment_formatting():
+    source = 'struct Example {\n/* Common metadata */\n\n255: base.Base Base\n}'
+    out = format_text(source, Option(separate_base_fields=False))
+    assert out == '''struct Example {
+
+    /* Common metadata */
+
+    255: required base.Base Base,
+}'''
+
+
+def test_base_separator_cli_default_is_disabled(tmp_path):
+    thrift_file = tmp_path / 'example.thrift'
+    thrift_file.write_text('struct ExampleReq {1: string Name, 255: base.Base Base}')
+    result = CliRunner().invoke(main, [str(thrift_file)])
+    assert result.exit_code == 0, result.output
+    assert result.output.strip() == '''struct ExampleReq {
+    1: required string Name,
+    255: required base.Base Base,
+}'''

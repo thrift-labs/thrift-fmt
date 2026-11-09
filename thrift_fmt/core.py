@@ -21,7 +21,8 @@ class Option:
 
     def __init__(self, patch_sep: bool = True, patch_required: bool = True,
                  keep_comment: bool = True, indent: Optional[int] = None,
-                 align_assign: bool = True, align_field: bool = False):
+                 align_assign: bool = True, align_field: bool = False,
+                 separate_base_fields: bool = False):
 
         self.patch_sep: bool = patch_sep
         self.patch_required: bool = patch_required
@@ -33,6 +34,7 @@ class Option:
 
         self.align_assign: bool = align_assign
         self.align_field: bool = align_field
+        self.separate_base_fields: bool = separate_base_fields
 
     def disble_patch(self) -> Option:
         self.patch_required = False
@@ -132,7 +134,17 @@ class PureThriftFormatter:
             return node.parent
         return None
 
-    def _block_nodes(self, nodes: List[ParseTree], indent: str = ''):
+    @staticmethod
+    def _is_base_field(node: ParseTree):
+        if not isinstance(node, ThriftParser.FieldContext):
+            return False
+        name = node.IDENTIFIER().getText()
+        field_type = node.field_type().IDENTIFIER()
+        return name in ('Base', 'BaseResp') and field_type is not None \
+            and field_type.getText().rsplit('.', 1)[-1] == name
+
+    def _block_nodes(self, nodes: List[ParseTree], indent: str = '',
+                     separate_base_fields: bool = False):
         last_node = None
         for i, node in enumerate(nodes):
             if isinstance(node, (ThriftParser.HeaderContext, ThriftParser.DefinitionContext)):
@@ -140,7 +152,8 @@ class PureThriftFormatter:
 
             self.before_block_node(node)
             if i > 0:
-                if node.__class__ != last_node.__class__ or self._is_newline_node(node):
+                if node.__class__ != last_node.__class__ or self._is_newline_node(node) \
+                        or (separate_base_fields and self._is_base_field(node)):
                     self._newline(2)
                 else:
                     self._newline()
@@ -176,7 +189,9 @@ class PureThriftFormatter:
 
             subblocks, left_nodes = self._split_repeat_children(node.children[start:], field_class)
             self.before_subblocks(subblocks)
-            self._block_nodes(subblocks, indent=' ' * self._option.indent)
+            self._block_nodes(subblocks, indent=' ' * self._option.indent,
+                              separate_base_fields=self._option.separate_base_fields
+                              and isinstance(node, ThriftParser.Struct_Context))
             self.after_subblocks(subblocks)
 
             self._newline()
@@ -583,6 +598,15 @@ class ThriftFormatter(PureThriftFormatter):
         if self._option.is_align:
             self._padding_align(node)
 
+    def _is_base_field_start(self, node: TerminalNodeImpl):
+        parent = node.parentCtx
+        while parent is not None and not isinstance(parent, ThriftParser.FieldContext):
+            parent = parent.parentCtx
+        return isinstance(parent, ThriftParser.FieldContext) \
+            and isinstance(parent.parentCtx, ThriftParser.Struct_Context) \
+            and self._is_base_field(parent) \
+            and node.symbol.tokenIndex == parent.start.tokenIndex
+
     def _line_comments(self, node: TerminalNodeImpl):
         if not self._option.keep_comment:
             return
@@ -598,15 +622,16 @@ class ThriftFormatter(PureThriftFormatter):
             if self._last_token_index < token.tokenIndex < token_index:
                 comments.append(token)
 
+        base_field_comments = self._option.separate_base_fields and self._is_base_field_start(node)
         for token in comments:
-            if token.tokenIndex > 0 and token.type == ThriftParser.ML_COMMENT:
+            if token.tokenIndex > 0 and token.type == ThriftParser.ML_COMMENT and not base_field_comments:
                 self._newline(2)
 
             if self._indent_s:
                 self._push(self._indent_s)
             self._push(token.text.strip())
 
-            is_tight: bool = token.type == ThriftParser.SL_COMMENT \
+            is_tight: bool = base_field_comments or token.type == ThriftParser.SL_COMMENT \
                 or self._is_EOF(node) \
                 or 0 < node.symbol.line - (token.text.count('\n') + token.line) <= 1
             if is_tight:

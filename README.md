@@ -46,6 +46,33 @@ thrift-fmt -r ./thrift_files
 4. align by the field's assign (like go)
 5. align by each field's part
 6. Format only part of the parsed thrift
+7. Optionally separate common `Base` / `BaseResp` fields from preceding struct fields with one blank line
+
+Enable this rule with `--separate-base-fields` (disabled by default):
+
+```bash
+thrift-fmt --separate-base-fields mythrift.thrift
+thrift-fmt --separate-base-fields -w mythrift.thrift
+```
+
+For SDK usage, pass `Option(separate_base_fields=True)` to the formatter's
+`option()` method. This also works with `PureThriftFormatter`.
+
+With this option enabled, a struct field named `Base` with a type whose final name is `Base`
+(for example, `Base Base` or `base.Base Base`) gets one blank line before it.
+The same rule applies to `BaseResp BaseResp` and `base.BaseResp BaseResp`.
+This does not depend on the struct name or field ID. A first or only field
+gets no leading blank line. If the field has leading comments, the blank line
+goes before those comments.
+
+```thrift
+struct ExampleReq {
+    1: optional string Name,
+
+    // Common request metadata
+    255: optional base.Base Base,
+}
+```
 
 example
 ```thrift
