@@ -22,6 +22,9 @@ from .core import ThriftData, ThriftFormatter, Option
 @click.option(
     '--align-assign', is_flag=True, show_default=True, default=True, help='align by field\'s assign `=` (in struct/enum/union/exception)')
 @click.option(
+    '--separate-base-fields', is_flag=True, default=False,
+    help='separate Base / BaseResp struct fields from preceding fields with one blank line')
+@click.option(
     '--no-patch', is_flag=True, default=False, help='disable all --patch-xx flag')
 @click.option(
     '--no-align', is_flag=True, default=False, help='disable all --align-xx flag')
@@ -36,6 +39,7 @@ from .core import ThriftData, ThriftFormatter, Option
 def main(indent: Optional[int], remove_comment: Optional[bool],
          patch_required: Optional[bool], patch_sep: Optional[bool],
          align_field: Optional[bool], align_assign: Optional[bool],
+         separate_base_fields: bool,
          no_patch: Optional[bool], no_align: Optional[bool],
          recursive: Optional[bool], write: Optional[bool],
          path: str):
@@ -60,7 +64,8 @@ def main(indent: Optional[int], remove_comment: Optional[bool],
         keep_comment=not remove_comment,
         indent=indent,
         align_assign=align_assign,
-        align_field=align_field)
+        align_field=align_field,
+        separate_base_fields=separate_base_fields)
 
     if no_patch:
         option.disble_patch()
